@@ -51,11 +51,18 @@ export function Home() {
       </header>
 
       <div className="guide">
-        <Stick pose={save.days.length ? "wave" : "point"} face={face} size={92} label="Your guide, a stickman with a red headband" />
+        <Stick pose={save.days.length ? "wave" : "point"} face={face} size={84} label="Your guide, a stickman with a red headband" />
         <p className="bubble">{ready ? guideLine(save, due) : <>Loading your brain...</>}</p>
       </div>
 
-      <SystemWindow title="DAILY QUEST">
+      <Link className="btn block play-cta" href={`/play/${up.w.id}/${up.u.id}/`}>
+        ▶ PLAY: {up.w.title} · {up.u.title}
+      </Link>
+
+      {save.xp === 0 ? (
+        <SystemWindow title="DAILY QUEST"><span>Finish <b>1 round</b>. That&apos;s a full day. That&apos;s it.</span></SystemWindow>
+      ) : (
+        <SystemWindow title="DAILY QUEST">
         <ul className="quest">
           <li className={save.quest.round ? "done" : ""}><span className="box">{save.quest.round ? "✓" : ""}</span><span>Finish 1 round <b>(counts as a full day)</b></span></li>
           <li className={save.quest.review ? "done" : ""}><span className="box">{save.quest.review ? "✓" : ""}</span><span>Answer 1 review card</span></li>
@@ -66,10 +73,8 @@ export function Home() {
           {r.next ? <>RANK {r.rank} → next at <b>{r.next} XP</b> · you have {save.xp}</> : <>RANK S. You cleared the System.</>} · days played <b>{save.days.length}</b>
         </div>
       </SystemWindow>
+      )}
 
-      <Link className="btn block" href={`/play/${up.w.id}/${up.u.id}/`}>
-        ▶ PLAY: {up.w.title} · {up.u.title}
-      </Link>
 
       <h2 className="h2">Worlds <small>pick one, any one</small></h2>
       <div className="worlds">

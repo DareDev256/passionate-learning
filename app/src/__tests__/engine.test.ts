@@ -114,6 +114,16 @@ describe("rounds", () => {
     expect(r.questDone).toEqual({ round: true, review: false, perfect: true });
     expect(r.firstOfDay).toBe(true);
   });
+  it("speed bonus: under 60s with half right pays 15 XP; slow or sloppy pays nothing extra", () => {
+    const answers = unit.cards.map((c, i) => ({ key: cardKey(world.id, c), correct: i % 2 === 0, review: false }));
+    const fast = applyRound(freshSave(), world, unit, answers, new Date("2026-10-03T15:00:00"), 41);
+    const slow = applyRound(freshSave(), world, unit, answers, new Date("2026-10-03T15:00:00"), 75);
+    expect(fast.speedBonus).toBe(15);
+    expect(slow.speedBonus).toBe(0);
+    expect(fast.xpGained - slow.xpGained).toBe(15);
+    const sloppy = unit.cards.map((c) => ({ key: cardKey(world.id, c), correct: false, review: false }));
+    expect(applyRound(freshSave(), world, unit, sloppy, new Date(), 20).speedBonus).toBe(0);
+  });
   it("missing a day resets nothing", () => {
     const answers = unit.cards.map((c) => ({ key: cardKey(world.id, c), correct: true, review: false }));
     const r1 = applyRound(freshSave(), world, unit, answers, new Date("2026-10-01T15:00:00"));

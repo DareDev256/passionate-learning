@@ -3,10 +3,15 @@ import { promptDojo } from "./worlds/prompt-dojo";
 import { tokenTemple } from "./worlds/token-temple";
 import { capDetector } from "./worlds/cap-detector";
 import { redTeam } from "./worlds/red-team";
+import { toolShop } from "./worlds/tool-shop";
+import { circuitLab } from "./worlds/circuit-lab";
+import { netRun } from "./worlds/net-run";
+import { speedKeys } from "./worlds/speed-keys";
+import { biasCheck } from "./worlds/bias-check";
 import { comingSoon } from "./worlds/soon";
 
 /** The catalogue, in map order. Add a world here and it appears in the app. */
-export const WORLDS: World[] = [promptDojo, tokenTemple, capDetector, redTeam, ...comingSoon];
+export const WORLDS: World[] = [promptDojo, tokenTemple, capDetector, redTeam, biasCheck, toolShop, netRun, circuitLab, speedKeys, ...comingSoon];
 
 export const CATALOGUE_DATE = "2026-10-03";
 

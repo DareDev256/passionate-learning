@@ -21,7 +21,10 @@ export function Arcade() {
         <span className="chip">🎟 {save.tokens} token{save.tokens === 1 ? "" : "s"}</span>
       </header>
       {playing ? (
-        <iframe className="arcade-frame" src="/arcade/pop/index.html" title="What's Poppin" allow="autoplay" />
+        <div className="arcade-full">
+          <button className="arcade-exit" onClick={() => setPlaying(false)}>✕ BACK TO LEARNING</button>
+          <iframe src="/arcade/pop/index.html" title="What's Poppin" allow="autoplay" />
+        </div>
       ) : (
         <>
           <div className="guide">

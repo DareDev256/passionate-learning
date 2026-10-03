@@ -72,10 +72,16 @@ export interface RoundResult {
   mastered: boolean;
   firstOfDay: boolean;
   questDone: { round: boolean; review: boolean; perfect: boolean };
+  /** Finished inside the 60-second target: a bonus, never a penalty. */
+  speedBonus: number;
 }
 
+/** The round's time target. Beat it for a bonus; miss it and nothing bad happens. */
+export const TARGET_SECONDS = 60;
+export const SPEED_BONUS = 15;
+
 /** Applies a finished round to the save. Returns the new save plus everything the recap screen shows. */
-export function applyRound(save: Save, world: World, unit: Unit, answers: Answer[], now = new Date()): RoundResult {
+export function applyRound(save: Save, world: World, unit: Unit, answers: Answer[], now = new Date(), seconds?: number): RoundResult {
   const s: Save = { ...save, cards: { ...save.cards }, units: { ...save.units }, days: [...save.days], quest: { ...save.quest } };
   let xp = 0, bonusCards = 0;
   for (const a of answers) {
@@ -89,6 +95,8 @@ export function applyRound(save: Save, world: World, unit: Unit, answers: Answer
   const total = answers.length;
   const accuracy = total ? correct / total : 0;
   if (accuracy === 1 && total > 0) xp += 20; // perfect-round bonus
+  const speedBonus = seconds !== undefined && seconds <= TARGET_SECONDS && accuracy >= 0.5 ? SPEED_BONUS : 0;
+  xp += speedBonus;
   const k = unitKey(world.id, unit.id);
   const prev = s.units[k] ?? { last: [], best: 0, rounds: 0 };
   s.units[k] = { last: [...prev.last, accuracy].slice(-3), best: Math.max(prev.best, accuracy), rounds: prev.rounds + 1 };
@@ -109,6 +117,7 @@ export function applyRound(save: Save, world: World, unit: Unit, answers: Answer
     rankBefore, rankAfter: rankOf(s.xp).rank,
     mastered: !isMastered(prev) && isMastered(s.units[k]),
     firstOfDay,
+    speedBonus,
     questDone: { round: !qBefore.round && s.quest.round, review: !qBefore.review && s.quest.review, perfect: !qBefore.perfect && s.quest.perfect },
   };
 }
