@@ -3,7 +3,7 @@
 
   yt.py auth                         one-time consent (pick the Passionate Learning channel); stores a refresh token
   yt.py whoami                       channels this token acts for
-  yt.py upload FILE --title T [--description-file F] [--tags a,b] [--privacy public|unlisted|private] [--thumb PNG] [--playlist ID]
+  yt.py upload FILE --title T [--description-file F] [--tags a,b] [--privacy public|unlisted|private] [--thumb PNG] [--playlist ID] [--publish-at ISO]
   yt.py branding --description-file F --keywords "a b \"c d\"" [--banner PNG]
   yt.py playlist --title T --description D [--privacy public]
   yt.py stats
@@ -51,14 +51,15 @@ def cmd_upload(a):
     y = api(); channel(y)
     body = {'snippet': {'title': a.title, 'description': read(a.description_file), 'categoryId': '27',  # Education
                         'tags': [t.strip() for t in (a.tags or '').split(',') if t.strip()], 'defaultLanguage': 'en', 'defaultAudioLanguage': 'en'},
-            'status': {'privacyStatus': a.privacy, 'selfDeclaredMadeForKids': False, 'embeddable': True}}
+            'status': {'privacyStatus': 'private' if a.publish_at else a.privacy, 'selfDeclaredMadeForKids': False, 'embeddable': True}}
+    if a.publish_at: body['status']['publishAt'] = a.publish_at
     req = y.videos().insert(part='snippet,status', body=body, media_body=MediaFileUpload(a.file, chunksize=8 * 1024 * 1024, resumable=True))
     resp = None
     while resp is None: _, resp = req.next_chunk()
     vid = resp['id']
     if a.thumb: y.thumbnails().set(videoId=vid, media_body=MediaFileUpload(a.thumb)).execute()
     if a.playlist: y.playlistItems().insert(part='snippet', body={'snippet': {'playlistId': a.playlist, 'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}).execute()
-    print(json.dumps({'id': vid, 'url': f'https://youtu.be/{vid}', 'privacy': resp['status']['privacyStatus']}))
+    print(json.dumps({'id': vid, 'url': f'https://youtu.be/{vid}', 'privacy': resp['status']['privacyStatus'], 'publishAt': resp['status'].get('publishAt')}))
 
 def cmd_branding(a):
     y = api(); ch = channel(y)
@@ -83,7 +84,7 @@ def cmd_stats(_):
 p = argparse.ArgumentParser(); s = p.add_subparsers(dest='cmd', required=True)
 for n in ('auth', 'whoami', 'stats'): s.add_parser(n)
 u = s.add_parser('upload'); u.add_argument('file'); u.add_argument('--title', required=True); u.add_argument('--description-file')
-u.add_argument('--tags'); u.add_argument('--privacy', default='private'); u.add_argument('--thumb'); u.add_argument('--playlist')
+u.add_argument('--tags'); u.add_argument('--privacy', default='private'); u.add_argument('--thumb'); u.add_argument('--playlist'); u.add_argument('--publish-at', help='ISO UTC, schedules a public release')
 b = s.add_parser('branding'); b.add_argument('--description-file', required=True); b.add_argument('--keywords', required=True); b.add_argument('--banner')
 pl = s.add_parser('playlist'); pl.add_argument('--title', required=True); pl.add_argument('--description', default=''); pl.add_argument('--privacy', default='public')
 a = p.parse_args(); {'auth': cmd_auth, 'whoami': cmd_whoami, 'upload': cmd_upload, 'branding': cmd_branding, 'playlist': cmd_playlist, 'stats': cmd_stats}[a.cmd](a)
