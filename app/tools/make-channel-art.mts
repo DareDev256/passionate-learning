@@ -21,11 +21,11 @@ await shot(`<svg width="800" height="800" viewBox="0 0 800 800" style="backgroun
 // Banner: 2560x1440, everything important inside the 1546x423 centre safe area
 await shot(`<div style="width:2560px;height:1440px;background:#fff;background-image:radial-gradient(#e3e3e3 3px,transparent 3px);background-size:44px 44px;position:relative">
   <svg style="position:absolute;left:0;top:0" width="2560" height="1440" viewBox="0 0 2560 1440"><g filter="url(#rough)">
-    ${fig({ pose: "present", face: "grin", wear: ["hero"] }, 2.4, 330, 1060)}
-    ${fig({ robot: true, pose: "shrug", face: "smug", flip: true }, 2.4, 2230, 1060)}
-    <path d="M180 1062H2380" stroke="#0a0a0a" stroke-width="6" stroke-dasharray="3 18" stroke-linecap="round"/>
+    ${fig({ pose: "present", face: "grin", wear: ["hero"] }, 1.55, 640, 905)}
+    ${fig({ robot: true, pose: "shrug", face: "smug", flip: true }, 1.55, 1920, 905)}
+    <path d="M540 907H2020" stroke="#0a0a0a" stroke-width="6" stroke-dasharray="3 18" stroke-linecap="round"/>
   </g></svg>
-  <div style="position:absolute;left:0;right:0;top:470px;text-align:center">
+  <div style="position:absolute;left:0;right:0;top:548px;text-align:center">
     <div style="font:104px/0.9 AB;color:#0a0a0a;letter-spacing:1px">PASSIONATE LEARNING</div>
     <svg width="900" height="30" viewBox="0 0 200 14" preserveAspectRatio="none"><path d="M3 9q40 -8 80 -2t80 -3q20 -1 34 3" fill="none" stroke="#ff3b1f" stroke-width="4" stroke-linecap="round"/></svg>
     <div style="font:62px/1.1 PH;color:#0a0a0a;margin-top:6px">AI for Idiots: 60 seconds, stickmen, memes. No cap.</div>
