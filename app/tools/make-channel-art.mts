@@ -1,4 +1,4 @@
-// YouTube channel art for "AI for Idiots" from the stickman kit (no generated art). Run: npx tsx tools/make-channel-art.mts <outdir>
+// YouTube channel art for Passionate Learning (show: "AI for Idiots") from the stickman kit (no generated art). Run: npx tsx tools/make-channel-art.mts <outdir>
 import { chromium } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { figure, DEFS } from "../src/art/kit";
@@ -26,9 +26,9 @@ await shot(`<div style="width:2560px;height:1440px;background:#fff;background-im
     <path d="M180 1062H2380" stroke="#0a0a0a" stroke-width="6" stroke-dasharray="3 18" stroke-linecap="round"/>
   </g></svg>
   <div style="position:absolute;left:0;right:0;top:470px;text-align:center">
-    <div style="font:150px/0.9 AB;color:#0a0a0a;letter-spacing:2px">AI FOR IDIOTS</div>
+    <div style="font:104px/0.9 AB;color:#0a0a0a;letter-spacing:1px">PASSIONATE LEARNING</div>
     <svg width="900" height="30" viewBox="0 0 200 14" preserveAspectRatio="none"><path d="M3 9q40 -8 80 -2t80 -3q20 -1 34 3" fill="none" stroke="#ff3b1f" stroke-width="4" stroke-linecap="round"/></svg>
-    <div style="font:62px/1.1 PH;color:#0a0a0a;margin-top:6px">Learn AI in 60 seconds. Stickmen. Memes. No cap.</div>
+    <div style="font:62px/1.1 PH;color:#0a0a0a;margin-top:6px">AI for Idiots: 60 seconds, stickmen, memes. No cap.</div>
   </div>
 </div>`, 2560, 1440, `${OUT}/banner-2560x1440.png`);
 await b.close(); console.log("channel art written");
