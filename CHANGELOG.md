@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-03: Passionate Learning becomes one app (app v1.0 → v1.1)
+
+The separate suite sites merge into one installable app at https://passionate-learning.vercel.app (`app/`).
+- One profile across every world: XP, ranks E to S, days played (no streak reset), FSRS spaced repetition,
+  Kumon-style mastery gates, a daily quest, arcade tokens.
+- 9 live worlds, 163 cards, 6 card types; 4 worlds coming soon and open for contributors.
+- AI for Idiots stickman look (hand-coded SVG), original System windows, stickman meme cards.
+- What's Poppin bundled as the arcade break. PWA: installable, offline.
+- Gauntlet loop: a blind critic judged the live app against Duolingo and Brilliant; v1.1 fixed one gap per screen
+  (timer + speed bonus, answer juice, world path, recap that leads with the win, full-screen arcade).
+- Repo renamed passion-learning-suite → passionate-learning; README, CONTRIBUTING, issue templates, Discussions.
+
 ## [0.27.2] - 2026-08-31
 
 ### Added

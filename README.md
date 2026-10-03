@@ -1,490 +1,70 @@
-# Passionate Learning Suite
+<p align="center"><img src="app/public/og.png" alt="Passionate Learning: learn AI in 60-second rounds" width="720"></p>
 
-7 web-based educational games that teach Gen AI concepts and tech fundamentals through gameplay. Each game is a standalone Next.js 16 app built from a shared template with unique mechanics, curriculum, and theme.
+# Passionate Learning
 
-[![Games](https://img.shields.io/badge/Games-7-6C63FF?style=flat-square)](https://github.com/DareDev256/passion-learning-suite)
-[![Deployed](https://img.shields.io/badge/Deployed-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
-[![Stack](https://img.shields.io/badge/Stack-Next.js_16-000000?style=flat-square&logo=next.js)](https://nextjs.org)
+**A free learning game about AI and tech. 60-second rounds. Stickman memes. A System that levels you up. No streak guilt.**
 
-## AI Literacy Games (6)
+**Play:** https://passionate-learning.vercel.app · install it on your phone from the browser menu (Add to Home Screen).
 
-| # | Game | Repo | Live | What It Teaches |
-|---|------|------|------|-----------------|
-| 1 | **Prompt Craft** | _source not published_ | [Play](https://prompt-craft-jet.vercel.app) | Prompt engineering — structure, constraints, iterative refinement |
-| 2 | **Token Prophet** | _source not published_ | [Play](https://token-prophet.vercel.app) | How LLMs think — next-token prediction, probability, context windows |
-| 3 | **Hallucination Hunter** | _source not published_ | [Play](https://hallucination-hunter.vercel.app) | AI output evaluation — spot factual errors, verify claims |
-| 4 | **Bias Buster** | _source not published_ | [Play](https://bias-buster-five.vercel.app) | AI ethics — detect and measure bias across demographics |
-| 5 | **Tool Match** | _source not published_ | [Play](https://tool-match-sable.vercel.app) | AI tool selection — match user intents to the right model/tool |
-| 6 | **Red Team Arena** | _source not published_ | [Play](https://red-team-arena.vercel.app) | AI safety — ethical prompt injection, jailbreaks, defense |
+Passionate Learning is one app with a growing catalogue of **worlds**. Every world teaches one thing through short rounds of cards that ask before they explain. A stickman reacts to every answer, a meme explains the idea, and old cards come back right before you'd forget them.
 
-## Tech Fundamentals Games (1)
+It's built in the open. **A new world is one data file**, so anyone who just learned something can teach it.
 
-| # | Game | Repo | Live | What It Teaches |
-|---|------|------|------|-----------------|
-| 7 | **Circuit Prophet** | _source not published_ | [Play](https://circuit-prophet.vercel.app) | Hardware & electronics — Ohm's Law, logic gates, CPU architecture |
+## What's in it
 
-## Shared Tech Stack
+| World | Teaches | Cards |
+|---|---|---|
+| Prompt Dojo | Talking to AI so it actually helps | 18 |
+| Token Temple | How AI thinks, one token at a time | 17 |
+| Cap Detector | Catching AI when it makes things up | 15 |
+| Red Team | How AI gets tricked, and how to protect it | 10 |
+| Bias Check | When AI treats people unfairly, and why | 10 |
+| Tool Shop | Picking the right tool (sometimes it's not AI) | 15 |
+| Net Run | How the internet moves your stuff | 35 |
+| Circuit Lab | How computers work, down to the wires | 27 |
+| Speed Keys | Typing tech words at full speed | 16 |
+| *Deepfake Detector, Scam Radar, Code Dojo, AI at Work* | **coming soon: help build them** | |
 
-- **Framework**: Next.js 16 + React 19 + TypeScript (strict)
-- **Styling**: Tailwind CSS v4 (`@theme inline`)
-- **Animation**: Framer Motion
-- **Font**: Press Start 2P (pixel aesthetic)
-- **Spaced Repetition**: ts-fsrs (FSRS-4.5)
-- **Persistence**: localStorage (SSR-safe, configurable game ID via `configureStorage()`, input-validated against prototype pollution and injection)
-- **Testing**: Vitest, 738 tests across 39 files under `template/src/__tests__/`.
-  Reproduce the count with
-  `grep -chE '^\s*(it|test)\(' template/src/__tests__/*.test.ts | paste -sd+ - | bc`.
-  <details><summary>What they cover</summary>
+Plus an arcade break (What's Poppin) you pay for with tokens earned from rounds.
 
-  storage, formatters, difficulty engine, curriculum, item scoring, enrichment integration, security hardening, social share + Web Share API + CWE-20 sanitization, player insights + edge cases + boundary coverage, spaced repetition, session planner + edge cases, session recap messages + threshold boundaries, auto-select integration, activity heatmap, category radar geometry, retention curve (Ebbinghaus + bucket matching + SVG mapping), daily challenge (deterministic seeding + bonus XP + localStorage persistence + expiry + corruption recovery), achievements (idempotent unlock, tier gating, time-of-day mocking, localStorage validation, trophy case sorting), achievement notifier (FIFO queue, auto-dismiss, sound-on-first, subscribe/unsubscribe, clear/flush), sound engine (Web Audio mock, oscillator counts per sound, mute gating, volume scaling, preference persistence, malformed JSON recovery), session forecast (composition math, reason tagging, percentage segments, prompt truncation, priority ordering), combo system (tier resolution + boundary transitions + peak tracking + decay timer + XP stacking), storage integrity (prototype pollution write-path rejection, checkMastery corruption recovery, analytics edge cases, streak corruption, itemScores deep validation), coverage gaps (memoryTier boundary precision + updateItemScore accumulation + prototype pollution via Object.hasOwn + analytics out-of-order events + describeSession singular/plural grammar), boundary value analysis + prototype pollution input vectors + corruption recovery, storage-security integration, learning velocity (linearSlope math + session storage CRUD + cap trimming + malformed recovery + trend detection + velocity averages), identifier parsing (multi-segment categories + prototype pollution + round-trip consistency + type guards + edge cases), edge cases, critical-path edge cases, knowledge decay panel (health scoring boundaries + horizon switching monotonicity + category risk aggregation + urgency thresholds + at-risk sort order + retention percentage validation), recall rewards (claimable 2×/3× detection + upcoming window lookahead + tier sorting + boundary precision + custom baseXP + countRewards aggregation + bulk performance), auto-select critical paths (zero-timestamp FSRS guards + fractional slot rounding + reviewCount arithmetic + dominantReason tie-breaking + oldest-seen ranking + threshold precision), daily challenge banner (data contract validation + completed state rendering + countdown timer data + category display formatting + single-item catalog edge cases), auto-select phase boundaries (disabled review/weak phases + Phase 2 starvation + weak-category sort order + describeSession all-zero plan + category tie classification + orphaned score filtering + timestamp edges + defensive mastery boundaries), session history (toDayLabel relative formatting + toTimeLabel AM/PM + buildSessionHistory aggregation + trend detection + reverse chronological ordering + entry limiting + empty state), auto-select degenerate inputs (single-slot sessions + review-only starvation + due/upcoming dedup + multiple weak categories + Phase 1 exhaustion of weak items + partial options defaults + describeSession mixed grammar + estimatedMinutes ceiling rounding), auto-select contract invariants (phantom FSRS card filtering + 70% weak boundary precision + priority sort monotonicity + implicit profile computation + findWeakestItems ratio-tie tiebreaker + zero-attempt category exclusion + category sort order + confidence level boundaries + Phase 3 bypass verification), study cadence (computeGaps extraction + scoreRegularity CV-based scoring + computeWeeklyRate actual-span frequency + recommendNextTime adaptive scheduling + cadenceMessage all ratings + classifyCadence boundary precision + analyzeCadence integration with mock snapshots), mastery milestones (isItemMastered dual-threshold + classifyStatus 5-tier ladder + projectSessions ceiling rounding + NaN/Infinity guards + computeCategoryMilestones grouping/sorting + buildMilestoneReport aggregation + next milestone identification + empty curriculum graceful handling + constant sanity), autoSelectCore unit tests (allocateSlots boundary values + fractional floor rounding + zero/full ratio extremes + classifyReviewReason FSRS-first precedence + 7-day exact boundary + both-zero fallback + sortByWeakPriority unseen-first ordering + stable sort preservation + immutability + countByReason mixed/empty/single tallying + findDominantReason tie determinism + all-zero safety + estimateDuration ceiling rounding + zero-input guards)
+## How it teaches
 
-  </details>
-- **Session UI**: `SessionBanner` component with animated progress bar, reason tags (review/bonus/weak/new), and composition pills
-- **Session Forecast** — Pre-session overview screen visualizing the auto-select plan: stacked composition bar, scrollable item queue with reason tags, recall bonus callout, estimated time, and "BEGIN SESSION" CTA. Builds metacognitive awareness by explaining *why* each item was selected.
-- **Session Planning**: Smart auto-select via `useSessionPlanner()` hook — FSRS reviews (recall-bonus detection uses authoritative FSRS `lastReview` timestamp) + weak-category targeting + difficulty-matched new content + `SessionForecast` pre-session preview + `SessionBanner` progress UI + `SessionRecap` post-session debrief with memory strength meter
-- **Deployment**: Vercel. All 7 links in the tables above return 200.
+- **Problem first.** Every card asks before it explains.
+- **60-second rounds.** Five to eight cards. One round counts as a whole day. Finish inside 60 seconds of thinking time for a speed bonus; there is no penalty for going slower.
+- **No streak to lose.** The app counts days played, never days missed. A missed day resets nothing.
+- **Spaced repetition (FSRS).** Cards you got wrong, or haven't seen in a while, come back across every world. Remembering a card after 7 days pays 2x XP, after 30 days 3x.
+- **Mastery gates (Kumon style).** Clear a unit at 70% to open the next; master it at 90% over your last three rounds.
+- **Ranks E to S**, announced by the System. A daily quest of three small goals, never punished.
 
-## Shared Game Systems
+## The look
 
-Every game inherits from the `template/` directory:
+Black ink on white paper with one vermilion accent, drawn with a hand-coded SVG stickman kit (no generated art), interrupted by dark glowing System windows for quests and rank-ups. Fonts: Archivo Black, Archivo, Patrick Hand, JetBrains Mono.
 
-- **XP + Leveling** — 100 XP/level with delayed recall rewards (1x/2x/3x multiplier)
-- **Daily Streak** — freeze system (earn 1 freeze per 10 levels, max 3)
-- **FSRS-4.5 Spaced Repetition** — scientifically-backed review scheduling with live ts-fsrs integration
-- **Mastery Gates** — Kumon-style: 90% on last 3 attempts to advance
-- **Sound Engine** — Web Audio API synthesized game sounds (zero audio files). 5 distinct sound cues: ascending chime (correct), soft descending tone (incorrect — NOT a buzzer), major chord + arpeggio (celebration), shimmer rise (achievement unlock), UI tick. Mute toggle + volume slider persisted to localStorage. SSR-safe. `SoundControl` widget component included. 17 tests.
-- **CRT Overlay** — retro scanlines + neon glow UI theme
-- **Accessibility** — WCAG 2.2 AA compliant
-- **Adaptive Difficulty** — Kumon-style auto-select: promotes at 85% accuracy, demotes at 50%, per-tier rolling window
-- **Smart Session Planner** — auto-select orchestrator combining FSRS reviews, weak-category drills, and difficulty-matched new content into optimal study sessions
-- **Session Recap** — post-session debrief with reason breakdown (reinforced/bonus/drilled/discovered), memory strength meter (FSRS stability → tier), and contextual motivational messages
-- **Activity Heatmap** — GitHub-style pixel-art calendar showing daily learning activity over 12 weeks, with intensity mapping, best streak stats, and hover tooltips
-- **Category Radar** — SVG radar chart with neon glow showing mastery polygon across all categories, animated with Framer Motion springs
-- **Retention Curve** — Animated Ebbinghaus forgetting curve visualization comparing theoretical memory decay against actual player retention at 0/1/3/7/14/30-day intervals, with neon SVG rendering, hover tooltips, and color-coded data points (green = beating the curve, red = below)
-- **Daily Challenge** — deterministic date-seeded challenge (same for all players), rotating focus categories, streak-aware bonus XP (1.5×–3×), perfect accuracy bonus, midnight expiry countdown. `DailyChallengeBanner` component surfaces the challenge as a player-facing engagement hook with live countdown timer, focus category display, animated bonus multiplier badge, completion results with perfect score detection, and "START CHALLENGE" CTA. Integrated into PlayerInsights dashboard
-- **Combo System** — In-session consecutive-correct-answer multiplier with 4 tiers (warm 2×, hot 3×, fire 4×, ultra 5×). Spring-animated `ComboMeter` HUD with tier-specific neon glow. 8-second decay timer. Stacks with recall multipliers for up to 15× XP
-- **Achievement System** — 11 unlockable achievements across bronze/silver/gold tiers. Rewards behaviors that drive learning: streaks, retention, mastery, time-of-day play. Variable reward schedule (Duolingo-inspired). FIFO notification queue with auto-dismiss, sound integration, and `+N` badge for simultaneous unlocks. Trophy case display. `AchievementToastConnected` self-wires to the queue via `useSyncExternalStore`. 36 tests covering idempotent unlocks, tier sorting, time-mocking, localStorage validation, queue management, auto-dismiss timing, and subscriber lifecycle.
-- **Session History** — Visual timeline of recent sessions showing per-session accuracy bars (color-coded by performance), SVG accuracy sparkline with trend detection (improving/declining/steady), 3-stat summary (total sessions, average accuracy, personal best), and relative timestamps (Today, Yesterday, day names). Reuses learning velocity snapshots — no new storage. 20 tests.
-- **Difficulty Pulse** — Metacognitive visualization of the adaptive difficulty engine. Three-tier accuracy meter (easy ◇ / medium ◆ / hard ★) with animated fill bars, threshold markers at 50% demote and 85% promote boundaries, pulsing "ACTIVE" indicator on the recommended tier, and confidence badge (CALIBRATING/LEARNING YOU/LOCKED IN). Shows players HOW the game adapts to them — Kumon-style diagnostic placement made visible. Integrated into PlayerInsights dashboard. 24 tests.
-- **Mastery Milestone Predictor** — Forward-looking time-to-mastery projections answering "when will I finish?" Computes per-category mastery percentages with dual-threshold item mastery (≥80% accuracy, ≥3 attempts), classifies categories across a 5-tier status ladder (locked → emerging → progressing → near-mastery → mastered), projects remaining sessions to completion using learning velocity data, and identifies the next closest milestone to reach. 33 tests.
-- **Study Cadence Analyzer** — Research-backed session timing intelligence answering "when should I study next?" Computes sessions-per-week frequency against the evidence-based 3-5/week optimal range, scores regularity via coefficient of variation (detecting bursty vs evenly-spaced patterns), and recommends next study time using adaptive gap scheduling. Classifies cadence as optimal/under-practicing/over-practicing/irregular. Reuses learning velocity snapshots — no new storage. 37 tests.
-- **Learning Velocity** — Session-over-session performance tracking with SVG sparkline visualization. Computes mastery velocity (mastered/seen ratio) and trend direction (accelerating/decelerating/cruising/warming up) via least-squares linear regression. Neon-glow sparkline, endpoint dot, 3 stat cells. 13 tests.
-- **Knowledge Decay Panel** — Interactive FSRS-powered dashboard showing knowledge health as an animated SVG ring (0-100), per-category risk breakdown (critical/warning/stable), and at-risk item list with retention dots and days-until-threshold countdowns. Horizon selector (1/3/7/14/30 days) lets players see how their memory will hold up over time
-- **Analytics** — retention tracking, mastery metrics, per-question stats
-- **Recall Rewards Tracker** — Surfaces the delayed-reward XP system as player-facing countdowns. Shows which items are approaching 7-day (2×) and 30-day (3×) recall bonus windows, plus items claimable now with animated "CLAIM NOW" badges. Drives return visits by showing upcoming XP opportunities. Integrated into PlayerInsights dashboard
-- **Player Insights** — visual analytics dashboard showing mastery rate, learning velocity sparkline, recall rewards tracker, category strengths, retention recall bars, and weakest items needing review
-- **Social Share Cards** — retro-styled score cards with Web Share API (mobile) + clipboard fallback (desktop)
+## Contribute
 
-## Security
+New worlds, card fixes, game ideas, art, translations: see **[CONTRIBUTING.md](CONTRIBUTING.md)**. The fastest first contribution is a new unit of 5 cards for a world you know something about. Ideas and questions go in [Discussions](https://github.com/DareDev256/passionate-learning/discussions).
 
-The storage layer includes runtime hardening against client-side attacks:
-
-- **Prototype pollution defense** — `__proto__`, `constructor`, and `prototype` keys are stripped from all parsed localStorage data (storage layer and sound settings)
-- **Content ID validation** — All public functions that accept `itemId`, `levelKey`, `categoryId`, or `currentCategory` validate against a strict pattern (`a-z`, `0-9`, `_`, `.`, `:`, `/`, `-`, max 128 chars) and explicitly reject prototype pollution keys. Invalid IDs are silently dropped.
-- **Input validation** — Numeric fields (XP, accuracy, multiplier, levelId, volume levels) are clamped to safe bounds; NaN/Infinity/negative values are rejected
-- **Game ID sanitization** — `configureStorage()` only accepts alphanumeric/hyphen/underscore IDs (1-64 chars), preventing localStorage key injection
-- **Share text sanitization** — Game names in social share output are stripped of control characters and newlines, truncated to 100 chars, preventing content injection in share previews
-- **Deserialization hardening** — All `JSON.parse()` paths (progress, mastery, FSRS, analytics) validate structure, strip dangerous keys, and type-check every field before use
-- **Event type whitelist** — Only the 5 defined learning event types are accepted
-
-## Auto-Select Architecture
-
-The auto-select system is the template's core learning engine — it decides *what* to study and *why*, so players always get the most impactful session. Here's how the pieces connect:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    useSessionPlanner()                       │
-│  React hook — sequential item consumption, advance/skip     │
-│  Calls planSession() on mount, exposes progress + replan    │
-└─────────────┬───────────────────────────────────────────────┘
-              │ builds plan from 3 signals:
-              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    planSession()                             │
-│  lib/sessionPlanner.ts — the orchestrator                   │
-│                                                             │
-│  Phase 1: FSRS review queue (overdue first, recall bonuses) │
-│  Phase 2: Weak category drills (<70% accuracy)              │
-│  Phase 3: Difficulty-matched new content                    │
-│                                                             │
-│  Output: SessionPlan { items[], counts, estimatedMinutes }  │
-└──────┬──────────┬──────────────────┬────────────────────────┘
-       │          │                  │
-       │    ┌─────┴──────────────────┴──────────────────┐
-       │    │         autoSelectCore.ts                  │
-       │    │  Pure reusable primitives (no storage):    │
-       │    │  allocateSlots · classifyReviewReason      │
-       │    │  sortByWeakPriority · countByReason        │
-       │    │  findDominantReason · estimateDuration     │
-       │    └───────────────────────────────────────────┘
-       │              │                  │
-       ▼              ▼                  ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐
-│ getReview    │ │ computeCat   │ │ analyzeDifficulty()  │
-│ Queue()      │ │ Strengths()  │ │ + selectItems()      │
-│              │ │              │ │                      │
-│ spacedRep.ts │ │ insights.ts  │ │ difficulty.ts        │
-│ FSRS-4.5     │ │ per-category │ │ Kumon-style tier     │
-│ due/upcoming │ │ accuracy     │ │ ladder (easy/med/    │
-│ sorted by    │ │ strong/weak  │ │ hard), 85% promote,  │
-│ overdue days │ │ analysis     │ │ 50% demote          │
-└──────┬───────┘ └──────┬───────┘ └──────────┬───────────┘
-       │                │                     │
-       └────────────────┴─────────────────────┘
-                        │
-                        ▼
-              ┌──────────────────┐
-              │   storage.ts     │
-              │ getProgress()    │
-              │ getFSRSCards()   │
-              │ itemScores       │
-              └──────────────────┘
-```
-
-**Data flow**: `storage.ts` holds all player state → `planSession()` reads FSRS cards, item scores, and the content catalog → it delegates to the review queue, category analysis, and difficulty engine → the resulting `SessionPlan` feeds into `SessionForecast` (pre-session preview), `SessionBanner` (in-session progress), and `SessionRecap` (post-session debrief).
-
-**Key design decisions**:
-- **Reviews always come first** — FSRS overdue items get priority 0, ensuring spaced repetition isn't skipped for novelty
-- **Recall bonuses are motivational** — Items unseen for 7+ days are tagged `recall-bonus` and award 2×/3× XP, incentivizing long-term retention
-- **Weak categories get a dedicated slot** — The `weakCategoryBoost` ratio (default 30% of new slots) ensures struggling areas get targeted practice
-- **Deduplication across phases** — Items selected in Phase 1 are excluded from Phases 2 and 3 via a shared `usedIds` set
-- **Core primitives are storage-free** — `autoSelectCore.ts` contains pure functions (slot allocation, recall-bonus classification, weak-priority sorting, session counting) with zero storage/side-effect dependencies, making them independently testable and composable by any module. All 6 functions have dedicated unit tests covering boundary values, edge cases, and deterministic behavior
-
-## Repo Structure
-
-```
-passion-learning-suite/
-├── MASTER_SPEC.md           # Full pedagogy + architecture specification
-├── docs/                    # Deep-dive technical documentation
-│   └── adaptive-difficulty.md  # Tier-ladder algorithm, tuning, integration
-├── specs/                   # Per-game design documents
-│   ├── 01-prompt-craft.md
-│   ├── 02-token-prophet.md
-│   ├── 03-hallucination-hunter.md
-│   ├── 04-bias-buster.md
-│   ├── 05-tool-match.md
-│   └── 06-red-team-arena.md
-└── template/                # Shared Next.js base template
-    └── src/
-        ├── components/      # Game UI (Timer, VictoryScreen, etc.)
-        ├── hooks/           # useProgress, useGameStats, useDifficulty, useSessionPlanner, useSoundEffects, useCombo
-        ├── lib/             # Storage, difficulty engine, formatters, insights, spaced repetition, sound engine
-        ├── data/            # Curriculum data template
-        └── types/           # Shared TypeScript types
-```
-
-Each game lives in its own repo and is deployed independently. This repo holds the master specification, per-game specs, and the shared template that all games were scaffolded from.
-
-## Storage API Reference
-
-The persistence layer (`template/src/lib/storage.ts`) is the shared brain of every game. All functions are SSR-safe, validated against prototype pollution, and namespaced by game ID.
-
-### Setup
-
-| Function | Description |
-|----------|-------------|
-| `configureStorage(id)` | Set the game namespace for all localStorage keys. Call once at init. |
-| `getGameId()` | Returns the current game ID namespace. |
-| `resetProgress()` | Wipe all data for the current namespace. Irreversible. |
-
-### XP & Progression
-
-| Function | Description |
-|----------|-------------|
-| `getProgress()` | Load player progress (XP, level, streak, scores). Safe defaults on missing/corrupt data. |
-| `addXP(amount, multiplier?)` | Award XP with optional recall multiplier (1×/2×/3×). Auto-levels at 100 XP. |
-| `getRecallMultiplier(itemId)` | Get delayed-reward multiplier: 1× (recent), 2× (7+ days), 3× (30+ days). |
-| `completeLevel(categoryId, levelId)` | Mark level complete. Awards streak freeze every 10 levels. |
-| `updateItemScore(itemId, isCorrect)` | Record an answer and update the item's score counters. |
-
-### Spaced Repetition (FSRS-4.5)
-
-| Function | Description |
-|----------|-------------|
-| `getFSRSCards()` | Load all FSRS review cards. Malformed entries silently filtered. |
-| `saveFSRSCard(card)` | Upsert an FSRS card by `itemId`. |
-| `getDueItems(limit?)` | Get overdue item IDs sorted by most overdue. Default limit: 5. |
-| `getItemsForReview(limit?)` | Smart review queue: FSRS-first, naive fallback for pre-FSRS games. |
-
-### Spaced Repetition Scheduler (`template/src/lib/spacedRepetition.ts`)
-
-Active scheduling engine that bridges ts-fsrs with the storage layer. The storage API persists FSRS cards; this module runs the algorithm to compute optimal review intervals.
-
-| Function | Description |
-|----------|-------------|
-| `gradeItem(itemId, quality)` | Grade an answer and schedule next review via FSRS. Creates new card on first review. Returns next due date, interval, stability, and difficulty. |
-| `inferGrade(isCorrect, confidence?)` | Map correct/incorrect + confidence (0-1) to FSRS quality: again/hard/good/easy. Default confidence 0.7 → "good". |
-| `getReviewQueue(limit?)` | Prioritized queue: `due` (overdue, most overdue first) + `upcoming` (within 24h). Default limit: 10. |
-| `computeMemoryStrength()` | Overall memory score (0-100) based on average FSRS stability across all tracked items. |
-
-### Streaks & Mastery
-
-| Function | Description |
-|----------|-------------|
-| `updateStreak()` | Update daily streak. Consumes freezes to cover gaps. Idempotent per day. |
-| `recordMasteryAttempt(levelKey, accuracy)` | Record a mastery gate attempt (keeps last 5). |
-| `checkMastery(levelKey)` | Check Kumon-style gate: ≥90% on last 3 attempts to unlock. |
-
-### Analytics
-
-| Function | Description |
-|----------|-------------|
-| `recordLearningEvent(event)` | Track a learning event (5 valid types, max 1,000 stored). |
-| `getLearningAnalytics()` | Aggregate stats: items seen/mastered, retention rates, time-to-mastery. |
-
-### Adaptive Difficulty (`template/src/lib/difficulty.ts`) — [Full Docs](docs/adaptive-difficulty.md)
-
-Kumon-style diagnostic placement engine. Analyzes rolling performance across three tiers, auto-promotes at 85% accuracy, auto-demotes below 50%. See the [dedicated documentation](docs/adaptive-difficulty.md) for the tier-ladder algorithm, tuning constants, fallback logic, and integration guide.
-
-| Function | Description |
-|----------|-------------|
-| `analyzeDifficulty(items)` | Analyze player's per-tier performance from a rolling window of 5 recent answers. Returns recommended difficulty, per-tier accuracy/streak, and confidence level (`new`/`low`/`high`). |
-| `selectItems(items, count?, profile?)` | Pick items at recommended difficulty. Prioritizes unseen → oldest-seen. Falls back to adjacent tiers with a growth-mindset bias (harder before easier). |
-
-### Display Formatters (`template/src/lib/formatters.ts`)
-
-Pure functions for rendering game stats. Extracted from VictoryScreen for independent testability.
-
-| Function | Description |
-|----------|-------------|
-| `formatTime(seconds)` | Format seconds as `m:ss`. Guards against NaN, negative, and Infinity — returns `0:00` for invalid input. |
-| `renderSpeed(value, label)` | Render speed metric: `mm:ss` for time-based labels (matches `/time\|duration\|elapsed\|seconds?/i`), raw integer for rate-based (e.g. WPM). Returns `"—"` for invalid values. |
-| `computeGrade(accuracy)` | Map accuracy percentage to letter grade: S (≥95), A (≥90), B (≥80), C (≥70), D (≥60), F (<60). |
-
-### Curriculum Helpers (`template/src/data/curriculum.ts`)
-
-Each game replaces the template curriculum data but keeps these helper functions.
-
-| Function | Description |
-|----------|-------------|
-| `getItemsByCategory(categoryId)` | Get all `ContentItem`s belonging to a category. Returns empty array if no items match. |
-| `getItemsByLevel(categoryId, levelId)` | Get items for a specific level within a category. Resolves the level's item ID list to full `ContentItem` objects, preserving level order. |
-
-### Social Share (`template/src/lib/share.ts`)
-
-Pure functions for generating shareable score cards. Integrated into VictoryScreen via the `ShareCard` component.
-
-| Function | Description |
-|----------|-------------|
-| `generateShareText(data)` | Generate multi-line share text from `GameResults` with grade emoji, accuracy, streak, and optional game URL. |
-| `canNativeShare()` | Check if Web Share API is available (mobile browsers, some desktop). |
-| `shareResults(data)` | Share via native share sheet (mobile) or clipboard fallback (desktop). Returns `"shared"`, `"copied"`, or `"failed"`. |
-
-The `ShareCard` component renders automatically in `VictoryScreen` when `gameName` is provided. Pass `streak`, `level`, and `gameUrl` for richer share cards.
-
-### Session Planner (`template/src/lib/sessionPlanner.ts`)
-
-Auto-select brain that orchestrates FSRS reviews, adaptive difficulty, and category weakness analysis into optimal study sessions. Three-phase planning: (1) FSRS overdue/upcoming reviews, (2) weak category targeting (<70% accuracy), (3) difficulty-matched new content.
-
-| Function | Description |
-|----------|-------------|
-| `planSession(items, options?)` | Build a prioritized session: review items first, weak-area drills second, new content third. Returns item list with reasons, counts, and estimated duration. |
-| `hasReviewsDue()` | Quick boolean check for pending FSRS reviews — for badge/notification UI. |
-| `describeSession(plan)` | Human-readable summary, e.g. `"4 reviews (2 bonus XP!) + 3 weak-area drills + 3 new items · ~8 min"`. |
-
-**Options**: `sessionSize` (default 10), `reviewRatio` (default 0.4), `weakCategoryBoost` (default 0.3), `minutesPerItem` (default 0.75).
-
-### Daily Challenge (`template/src/lib/dailyChallenge.ts`)
-
-Deterministic daily challenge engine. Every player gets the same challenge on a given day via date-seeded PRNG. Focus category rotates daily across the content catalog. Bonus XP scales with streak.
-
-| Function | Description |
-|----------|-------------|
-| `generateDailyChallenge(items, size?)` | Build today's challenge: 5 items (3 from focus category, 2 from others), with streak-aware bonus multiplier (1.5× base, +0.5× per 5 streak days, max 3×). Deterministic — same date = same items. |
-| `calculateDailyBonusXP(correct, total, multiplier)` | Compute bonus XP: `correct × 10 × multiplier`, plus 25 flat bonus for perfect accuracy. |
-| `isDailyChallengeComplete()` | Check if today's challenge has been completed. |
-| `saveDailyChallengeResult(result)` | Persist today's result to localStorage. |
-| `getDailyChallengeResult()` | Load today's result (null if not yet attempted or from a previous day). |
-| `timeUntilExpiry(expiresAt)` | Format countdown: `"3h 45m"`, `"30m"`, or `"Expired"`. |
-
-### Player Insights (`template/src/lib/insights.ts`)
-
-Pure computation functions that transform raw progress data into displayable learning insights. No side effects.
-
-| Function | Description |
-|----------|-------------|
-| `computeCategoryStrengths(items, scores)` | Per-category accuracy, strong/weak item counts. Sorted by accuracy descending. |
-| `findWeakestItems(scores, limit?)` | Items with worst correct-to-total ratio, breaking ties by staleness. Default limit: 5. |
-| `computeMasteryRate(totalSeen, totalMastered)` | Mastery conversion rate as 0-100 percentage. |
-
-The `PlayerInsights` component (`components/game/PlayerInsights.tsx`) renders a retro-styled analytics panel with: Learning Pulse overview (items seen/mastered, mastery rate, time-to-mastery), 7-day and 30-day retention recall bars, per-category strength breakdown with animated progress bars, and a "Needs Work" section highlighting weakest items.
-
-### Category Radar (`template/src/lib/categoryRadar.ts`)
-
-Pure geometry functions for rendering SVG radar charts from category strength data.
-
-| Function | Description |
-|----------|-------------|
-| `polarToCartesian(angle, radius, cx, cy)` | Convert polar coordinate to cartesian. 0° = top (12 o'clock), clockwise. |
-| `computeRadarPoints(strengths, radius, cx, cy)` | Map category accuracies to SVG polygon vertices. Returns empty array if < 3 categories. |
-| `pointsToPolygon(pts)` | Convert radar points to SVG `<polygon points="...">` string. |
-| `computeAxisEndpoints(count, radius, cx, cy)` | Generate grid axis line endpoints from center to edge. |
-
-### Sound Engine (`template/src/lib/soundEngine.ts`)
-
-Web Audio API synthesized game sounds — zero external audio files. SSR-safe with lazy AudioContext initialization. Mute and volume preferences validated and persisted to localStorage.
-
-| Function | Description |
-|----------|-------------|
-| `loadSoundPrefs()` | Load sound preferences from localStorage. Validates types and ranges, falls back to defaults (`{ muted: false, volume: 0.7 }`) for malformed data. SSR-safe. |
-| `saveSoundPrefs(prefs)` | Persist mute/volume preferences to localStorage. No-op on the server. |
-| `playCorrect()` | Ascending C-E-G chime (3 oscillators). |
-| `playIncorrect()` | Soft descending Eb-C triangle wave (2 oscillators). Not a buzzer — gentle by design. |
-| `playCelebration()` | Major chord burst + rising arpeggio to C6 (7 oscillators). |
-| `playTick()` | Subtle A5 sine pip for UI interactions (1 oscillator). |
-| `playAchievement()` | Shimmering A-C#-E-A-C# rise (5 oscillators). |
-
-### Activity Heatmap (`template/src/lib/activityHeatmap.ts`)
-
-Aggregates learning events into a daily activity grid for GitHub-style visualization. Pure functions — no side effects.
-
-| Function | Description |
-|----------|-------------|
-| `toDateKey(ts)` | Convert a Unix timestamp (ms) to `YYYY-MM-DD` in local time. |
-| `countToIntensity(count)` | Map event count to 0–4 intensity level: 0→none, 1–2→low, 3–5→mid, 6–12→high, 13+→max. |
-| `computeStreaks(dateKeys, today)` | Compute current streak (backwards from today) and best streak (across all dates). |
-| `buildHeatmap(events, weeks?)` | Build the full grid: `weeks` × 7 daily cells with counts, intensity, streak stats. Default 12 weeks. |
-
-### Session Recap Messages (`template/src/lib/sessionRecapMessages.ts`)
-
-Pure functions for post-session motivational feedback. Extracted from `SessionRecap` so they're independently testable without jsdom.
-
-| Function | Description |
-|----------|-------------|
-| `getRecapMessage(plan)` | Select motivational text based on session composition. Recall-bonus count (≥2) overrides dominant reason. Returns an empty-session fallback when `plan.items` is empty. |
-| `memoryTier(strength)` | Map 0–100 memory strength to tier: **Strong** (≥75), **Building** (≥40), **Fragile** (>0), **New** (0). Returns `label`, `color`, and `barColor` Tailwind tokens for the strength meter. |
-
-### Retention Curve (`template/src/lib/retentionCurve.ts`)
-
-Pure functions for computing Ebbinghaus-style forgetting curves from real learning events. No side effects, no localStorage access.
-
-| Function | Description |
-|----------|-------------|
-| `ebbinghaus(day, stability?)` | Ebbinghaus forgetting model: `R = e^(-t/S)`. Returns 0–100 retention %. Default stability 3.5 (untrained learner). Guards against NaN, negative, and zero-stability inputs. |
-| `bucketByInterval(events)` | Group review events into nearest `RETENTION_DAYS` bucket (0/1/3/7/14/30) using adaptive thresholds. Returns per-bucket correct/total counts. |
-| `findNearestBucket(days)` | Match a day count to the closest retention interval. Tighter thresholds for small intervals (±0.5 for day 0–1), looser for large (±40% for day 7+). Returns `null` if no bucket matches. |
-| `computeRetentionCurve(events)` | Full retention curve: theoretical Ebbinghaus predictions + actual player data at each interval. Returns points, weighted overall retention, and total review count. |
-| `retentionToSVG(day, retention, width, height, padding?)` | Map a retention point to SVG coordinates. X = days (0–30), Y = retention (0–100). Default padding 32px. |
-| `pointsToPath(coords)` | Generate SVG `<path d="...">` string with monotone cubic bezier interpolation for smooth decay curves. |
-
-### Learning Velocity (`template/src/lib/learningVelocity.ts`)
-
-Session-over-session performance tracking. Answers: "Am I learning faster, or just grinding?" Pure functions + localStorage persistence. SSR-safe.
-
-| Function | Description |
-|----------|-------------|
-| `getSessionSnapshots()` | Load up to 30 stored session snapshots from localStorage. Filters malformed entries. SSR-safe (returns `[]` on server). |
-| `recordSession(snapshot)` | Persist a session snapshot. Caps at 30 entries (FIFO). Rejects empty sessions (`itemsSeen ≤ 0`). No-op during SSR. |
-| `linearSlope(values)` | Least-squares linear regression slope. Positive = trending up, negative = trending down. Returns 0 for fewer than 2 values. |
-| `computeVelocity()` | Full velocity report: current/average mastery velocity, trend direction (improving/declining/steady/insufficient), regression slope, and all session snapshots. Requires 3+ sessions for trend detection. |
-
-### Knowledge Decay Predictor (`template/src/lib/knowledgeDecay.ts`)
-
-Forward-looking decay engine that predicts which items will drop below retention threshold using FSRS card stability. Forecasts across 5 horizons (1, 3, 7, 14, 30 days) with per-category risk scoring and overall knowledge health. Pure functions, no side effects.
-
-| Function | Description |
-|----------|-------------|
-| `retrievability(daysSinceReview, stability)` | FSRS forgetting curve: `R = e^(-t/S)`. Returns 0–1 retention fraction. Handles zero/negative/NaN stability safely. |
-| `daysUntilDecay(stability, target?)` | Solves for days until retention drops to target (default 0.9). Mathematical inverse of retrievability. |
-| `predictDecay(cards, items, horizonDays, now?, target?)` | Predict which items will breach retention threshold within the horizon. Returns sorted at-risk items, per-category risk aggregates (critical/warning/stable), and health score (0–100). |
-| `fullDecayForecast(cards, items, now?)` | Generate forecasts across all 5 standard horizons in one call. Longer horizons always show equal or more at-risk items. |
-
-### Recall Rewards (`template/src/lib/recallRewards.ts`)
-
-Surfaces the delayed-reward XP system (1×/2×/3× recall bonuses) as player-facing reward windows. Scans item scores to find claimable and upcoming bonus opportunities. Pure functions, injectable timestamps for testing.
-
-| Function | Description |
-|----------|-------------|
-| `computeRecallRewards(scores, lookahead?, baseXP?, now?)` | Scans all scored items for recall bonus eligibility. Items 7+ days → 2× claimable, 30+ days → 3× claimable. Items approaching 7-day window within lookahead → upcoming. Returns sorted arrays + total claimable XP. |
-| `countRewards(summary)` | Total claimable + upcoming rewards. Useful for badge counts on navigation. |
-
-### Achievement Notifier (`template/src/lib/achievementNotifier.ts`)
-
-FIFO notification queue bridging achievement unlocks to display. Framework-agnostic pub/sub core — consumed via `useSyncExternalStore` in `AchievementToastConnected`.
-
-| Function | Description |
-|----------|-------------|
-| `enqueue(achievements)` | Push unlocked achievements into the queue. Plays `playAchievement()` sound on first entry. No-op for empty arrays. |
-| `dismiss()` | Dismiss current notification, advance to next (with sound). Clears auto-dismiss timer. |
-| `peek()` | Read the front-of-queue notification without consuming it. Returns `null` if idle. |
-| `pending()` | Number of queued notifications (including the one currently displayed). |
-| `clear()` | Flush entire queue and notify all subscribers. |
-| `subscribe(fn)` | Subscribe to queue state changes. Returns an unsubscribe function. Fires on enqueue, dismiss, and clear. |
-
-**Auto-dismiss**: Each notification auto-dismisses after 4 seconds, advancing to the next queued achievement.
-
-### Components
-
-All components live under `template/src/components/` and are split into `ui/` (reusable primitives) and `game/` (domain-specific).
-
-#### UI Components
-
-| Component | Props | Description |
-|-----------|-------|-------------|
-| `Button` | `variant` (`primary` / `secondary` / `ghost`), `size`, `disabled`, `onClick`, `children` | Retro pixel button with variant styling. |
-| `Logo` | — | Game logo with pixel font treatment. |
-| `StreakBadge` | `streak`, `freezes` | Displays daily streak count and available freezes. |
-| `XPBar` | `xp`, `level` | XP progress bar with level milestone markers. Fills to 100 XP per level. |
-
-#### Game Components
-
-| Component | Props | Description |
-|-----------|-------|-------------|
-| `Timer` | `seconds`, `total`, `onExpire` | Countdown timer with percentage-based progress bar. |
-| `VictoryScreen` | `accuracy`, `correct`, `total`, `elapsed`, `speedLabel?`, `gameName?`, `streak?`, `level?`, `gameUrl?`, `onRestart` | Post-level results with letter grade (S/A/B/C/D/F), stats, and optional share card. `speedLabel` matching `/time\|duration\|elapsed\|seconds?/i` renders as `mm:ss`. |
-| `ShareCard` | `gameName`, `accuracy`, `grade`, `streak?`, `level?`, `gameUrl?` | Retro-styled social share card. Uses Web Share API on mobile, clipboard fallback on desktop. |
-| `PlayerInsights` | `items`, `scores` | Analytics dashboard: mastery rate, category strengths, retention bars, weakest items. |
-| `SessionBanner` | `plan`, `description`, `progress`, `currentReason`, `isComplete` | Live session status banner with animated progress bar, reason tags (review/bonus/weak/new), and composition pills. All props provided by `useSessionPlanner()`. |
-| `SessionRecap` | `plan`, `memoryStrength`, `onNewSession` | Post-session debrief: reason breakdown, animated memory strength meter with tier labels, motivational message, and action buttons. |
-| `ActivityHeatmap` | `progress`, `weeks?` | Pixel-art activity calendar (12 weeks default). Aggregates `LearningEvent` timestamps + `itemScore.lastSeen` into daily intensity grid with hover tooltips, streak/active-day stats, and staggered entrance animation. |
-| `CategoryRadar` | `strengths`, `size?` | SVG radar chart visualizing category mastery as a neon polygon with concentric grid, axis labels, animated fill, and glow effects. Requires 3+ categories. |
-| `ComboMeter` | `combo` | Spring-animated HUD showing live combo count, multiplier badge, and tier label. Tier-specific neon glow (warm→hot→fire→ultra). ARIA live region. Appears at 2+ combo, top-center positioned. |
-| `LearningVelocity` | — | SVG sparkline showing accuracy trend across sessions. Trend badge (▲ accelerating / ▼ decelerating / ● cruising / ◌ warming up), neon endpoint dot, 3 stat cells (this session / avg mastery / session count). |
-| `RetentionCurve` | `events` | Animated Ebbinghaus forgetting curve: theoretical decay line vs actual player retention at 0/1/3/7/14/30-day intervals. Color-coded dots (green = beating curve, red = below). Hover tooltips. |
-| `AchievementToast` | `achievement`, `onDismiss` | Single achievement notification with icon, name, description, and tier badge. Pixel-border styling with slide-in animation. |
-| `SessionForecast` | `plan`, `description`, `onStart` | Pre-session overview: stacked composition bar, scrollable item queue with reason tags, recall bonus callout, estimated time, and "BEGIN SESSION" CTA. Empty-state messaging when all caught up. |
-| `KnowledgeDecayPanel` | `items` | FSRS-powered knowledge health dashboard. Animated SVG health ring (0-100, spring physics), horizon selector (1/3/7/14/30 days), per-category risk breakdown with urgency badges (critical/warning/stable), and scrollable at-risk item list with retention dots and days-until-threshold countdowns. Connects `knowledgeDecay` engine to player-facing UI. |
-| `RecallRewards` | — | Delayed-reward XP tracker showing claimable (7d/30d recall bonuses) and upcoming reward windows with tier badges (2×/3×), animated pulsing "CLAIM NOW" indicators, and total claimable XP counter. Integrated into PlayerInsights. |
-| `DifficultyPulse` | `items` | Metacognitive visualizer for the adaptive difficulty engine. Three-tier meter (easy/medium/hard) with accuracy bars, 50%/85% threshold markers, pulsing "ACTIVE" indicator on recommended tier, and confidence badge. Integrated into PlayerInsights. |
-
-### React Hooks
-
-| Hook | Description |
-|------|-------------|
-| `useProgress(categories?)` | Reactive player state with memoized XP, level, streak, and unlock actions. |
-| `useGameStats()` | Real-time session tracker: accuracy, correct/incorrect counts, elapsed time. |
-| `useSoundEffects()` | 8-bit Web Audio API sounds with volume controls and localStorage persistence. |
-| `useDifficulty(items, batchSize?)` | Adaptive difficulty: auto-selects items, re-analyzes after rounds, manual override. |
-| `useSessionPlanner(items, options?)` | Smart session orchestrator: sequential item consumption with `advance()`/`skip()`, session description, progress tracking, and `replan()`. |
-| `useCombo(options?)` | In-session combo manager: feed `hit()`/`miss()` signals, get live multiplier/tier/count. 8s decay timer (configurable). Callbacks for tier-up and combo-break events. |
-
-### Session Banner (`template/src/components/session/SessionBanner.tsx`)
-
-Compact session status banner for the top of the game screen. Shows session composition (review/bonus/weak/new pills), animated progress bar, current item reason tag with contextual icons, and recall bonus XP callout. Animates between reason states and displays "SESSION COMPLETE" on finish.
-
-Props: `plan`, `description`, `progress`, `currentReason`, `isComplete` — all provided by `useSessionPlanner()`.
-
-## Getting Started
-
-To scaffold a new game from the template:
+## Run it
 
 ```bash
-cp -r template/ ../my-new-game
-cd ../my-new-game
+cd app
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
+npm test             # engine + content tests
+npm run validate     # checks every card in the catalogue
+npm run build        # static export to app/out
 ```
 
-Then configure your game's storage namespace and customize content:
+Stack: Next.js 16 (static export) · React 19 · TypeScript · Tailwind v4 · ts-fsrs · Vitest. The app works offline (service worker) and installs as a PWA; an iOS/Android wrapper (Capacitor) is next.
 
-```ts
-// src/app/layout.tsx or top-level init
-import { configureStorage } from "@/lib/storage";
-configureStorage("my_game"); // namespaces all localStorage keys
-```
+## Repo map
 
-Customize `src/data/` with your curriculum and `src/app/page.tsx` with your game mechanics.
+| Path | What |
+|---|---|
+| `app/` | **The app.** Content lives in `app/src/content/worlds/`. |
+| `app/src/lib/` | The engine: save, ranks, FSRS memory, rounds, grading. |
+| `app/src/art/` | The stickman kit, the logo, the meme cards. |
+| `docs/specs/` | The design spec and the build notes. |
+| `template/`, `specs/` | The original separate-games template (v1 of the suite), kept for history. |
 
-## License
-
-MIT — [DareDev256](https://github.com/DareDev256)
+MIT licensed. Made by [James Dare](https://jamesdare.com) (DareDev256) in Toronto, with the community.
