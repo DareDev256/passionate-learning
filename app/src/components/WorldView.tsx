@@ -56,7 +56,7 @@ export function WorldView({ worldId }: { worldId: string }) {
                 {label}
               </Link>
               <span className="node-title">{s.u.title}</span>
-              <span className="node-blurb">{isHere ? "you are here" : s.p ? `best ${Math.round(s.p.best * 100)}%` : `${s.u.cards.length} cards`}</span>
+              <span className="node-blurb">{isHere ? "you are here" : s.p ? `best ${Math.round(s.p.best * 100)}%` : s.u.blurb}</span>
             </div>
           );
         })}

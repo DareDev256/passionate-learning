@@ -160,7 +160,7 @@ a { color: inherit; }
 
 /* ---------- round ---------- */
 .round { max-width: 640px; margin: 0 auto; padding: 12px 16px 220px; min-height: 100dvh; }
-.round-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-bottom: 18px; }
+.round-top { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; margin-bottom: 18px; }
 .x { width: 40px; height: 40px; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); font: 400 18px var(--display); display: grid; place-items: center; text-decoration: none; cursor: pointer; }
 .segs { display: flex; gap: 5px; }
 .segs i { flex: 1; height: 12px; border: 2px solid var(--ink); border-radius: 999px; background: var(--soft); }
@@ -223,6 +223,16 @@ a { color: inherit; }
 .ring-t { font: 400 19px var(--display); fill: var(--ink); }
 @keyframes ring-draw { from { stroke-dashoffset: var(--c); } }
 
+.xp-chip { font: 400 15px var(--display); border: 2.5px solid var(--ink); border-radius: 999px; padding: 3px 9px; background: var(--paper); box-shadow: 0 3px 0 var(--ink); min-width: 52px; text-align: center; }
+.xp-chip.bump { background: var(--good); color: #fff; animation: chip-bump 0.5s cubic-bezier(.3,1.8,.5,1); }
+@keyframes chip-bump { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(-4deg); } 100% { transform: none; } }
+.timer.low { animation: timer-pulse 0.8s ease-in-out infinite; border-color: var(--accent); }
+.timer.low i { background: var(--accent); }
+@keyframes timer-pulse { 0%, 100% { transform: none; } 50% { transform: scaleY(1.18); } }
+.guide-bob { display: inline-block; animation: bob 1.6s ease-in-out infinite; transform-origin: bottom center; }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-6px) rotate(3deg); } }
+.node-title, .node-blurb { position: relative; z-index: 2; }
+
 /* ---------- reaction zone (the character moment) ---------- */
 .react-zone { display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin: 26px auto 0; min-height: 170px; }
 .react-fig { position: relative; display: inline-block; }
@@ -232,10 +242,11 @@ a { color: inherit; }
 .react-zone.is-bad .react-fig { animation: shake 0.35s; }
 .react-zone.is-good .react-fig { animation: hop 0.4s cubic-bezier(.3,1.6,.5,1); }
 .burst { position: absolute; left: 50%; top: 22%; width: 0; height: 0; }
-.burst i { position: absolute; width: 12px; height: 12px; margin: -6px; background: var(--accent); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: burst 0.6s ease-out forwards; transform: rotate(var(--a)) translateY(0); }
-.burst i:nth-child(even) { background: var(--gold); width: 9px; height: 9px; }
-@keyframes burst { to { transform: rotate(var(--a)) translateY(-70px) scale(0.4); opacity: 0; } }
-@keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-14px); } 100% { transform: none; } }
+.burst i { position: absolute; width: 30px; height: 30px; margin: -15px; background: var(--accent); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: burst 0.6s ease-out forwards; transform: rotate(var(--a)) translateY(0); }
+.burst i:nth-child(even) { background: var(--gold); width: 22px; height: 22px; margin: -11px; }
+.burst i:nth-child(3n) { background: var(--sys-edge); }
+@keyframes burst { 0% { transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 1; } 60% { opacity: 1; } 100% { transform: rotate(var(--a)) translateY(-120px) scale(1); opacity: 0; } }
+@keyframes hop { 0% { transform: translateY(0); } 35% { transform: translateY(-34px) rotate(-6deg); } 60% { transform: translateY(0) scaleY(0.9); } 100% { transform: none; } }
 
 /* ---------- feedback drawer ---------- */
 .drawer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 4px solid var(--ink); padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); z-index: 20; animation: drawer-up 0.28s cubic-bezier(.2,.9,.3,1.2); max-height: 78dvh; overflow-y: auto; }
@@ -319,7 +330,7 @@ a { color: inherit; }
 }
 
 @media (min-width: 760px) {
-  .drawer-in { grid-template-columns: 1fr minmax(0, 340px); column-gap: 22px; }
+  .drawer.has-meme .drawer-in { grid-template-columns: 1fr minmax(0, 340px); column-gap: 22px; }
   .drawer-in > div:first-child { grid-column: 1; }
   .drawer .meme { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
   .drawer .btn { grid-column: 1; }

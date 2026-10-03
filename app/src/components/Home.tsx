@@ -51,7 +51,7 @@ export function Home() {
       </header>
 
       <div className="guide">
-        <Stick pose={save.days.length ? "wave" : "point"} face={face} size={84} label="Your guide, a stickman with a red headband" />
+        <span className="guide-bob"><Stick pose={save.days.length ? "wave" : "point"} face={face} size={84} label="Your guide, a stickman with a red headband" /></span>
         <p className="bubble">{ready ? guideLine(save, due) : <>Loading your brain...</>}</p>
       </div>
 

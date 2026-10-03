@@ -36,6 +36,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const [done, setDone] = useState<{ r: Response; ok: boolean } | null>(null);
   const [combo, setCombo] = useState(0);
   const [result, setResult] = useState<RoundResult | null>(null);
+  const [roundXp, setRoundXp] = useState(0);
   // Thinking time only: the clock runs while a card is waiting for an answer, never while you read the feedback.
   const spent = useRef(0);
   const askStart = useRef<number | null>(null);
@@ -53,6 +54,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     if (!rc || done) return;
     const ok = grade(rc.card, r);
     if (askStart.current !== null) { spent.current += performance.now() - askStart.current; askStart.current = null; }
+    if (ok) setRoundXp(roundXp + BASE_XP * recallMultiplier(save.cards[rc.key]));
     setDone({ r, ok });
     setCombo(ok ? combo + 1 : 0);
     setAnswers([...answers, { key: rc.key, correct: ok, review: rc.review }]);
@@ -87,6 +89,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
         <div className="segs" aria-label={`Card ${idx + 1} of ${round.length}`}>
           {round.map((_, i) => <i key={i} className={i < answers.length ? (answers[i].correct ? "ok" : "no") : i === idx ? "now" : ""} />)}
         </div>
+        <span className={`xp-chip ${done?.ok ? "bump" : ""}`} key={roundXp} aria-label={`${roundXp} XP this round`}>+<CountUp to={roundXp} ms={450} /></span>
         <span className="combo" aria-label={`Combo ${combo}`}>{combo >= 2 ? <span className="flame" style={{ fontSize: `${Math.min(16 + combo * 3, 30)}px` }}>🔥<b>{combo}</b></span> : <>{idx + 1}/{round.length}</>}</span>
       </div>
       <Timer spentMs={elapsedMs} />
@@ -106,7 +109,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
       </div>
 
       {done && (
-        <section className={`drawer ${done.ok ? "good" : "bad"}`} aria-live="assertive">
+        <section className={`drawer ${done.ok ? "good" : "bad"} ${rc.card.meme ? "has-meme" : ""}`} aria-live="assertive">
           <div className="drawer-in">
             <div>
               <div className="verdict">{done.ok ? pick(YES, h) : pick(NO, h)}</div>
