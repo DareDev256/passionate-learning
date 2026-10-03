@@ -32,7 +32,12 @@ The running ledger. Read this first after any context reset. Spec: `2026-10-03-u
 - [x] pages: home/map, world, round (6 card types + reaction zone + drawer), recap, arcade, about; PWA manifest + SW + icons + og
 - [x] tests 18/18, build, screenshots desktop + 390px (docs/screenshots/2026-10-03_pl-*)
 - [x] deployed: https://passionate-learning.vercel.app (Vercel project passionate-learning, ./ship.sh, headers verified, live round + arcade 0 errors)
-- [ ] blind critic pass (subagent cap parked 17:4x per CLAUDE.md fan-out rule)
-- [ ] port Bias, Tools, Circuit, Net, Keys
-- [ ] public repo + CONTRIBUTING + site link updates
-- [ ] YouTube kit + Short + long draft
+- [x] blind critic gauntlet: 3 critic rounds vs Duolingo/Brilliant/Kahoot; v1.1 + v1.2 shipped the gaps (home, path, timer, juice, recap, arcade full screen, drawer, node teasers)
+- [x] ported Bias Check, Tool Shop, Circuit Lab, Net Run, Speed Keys: 9 live worlds, 163 cards, tests 19/19
+- [x] public repo github.com/DareDev256/passionate-learning + CONTRIBUTING + issue/PR templates + issues #1-4; jamesdare.com 4.55.0 PLAY section, passion-site, profile README; 9 old game URLs 307 to /w/<id>/
+- [x] YouTube kit at ~/Creative/ai-for-idiots-channel/ (CHANNEL-KIT.md, avatar, banner, Short PL01 54 s, long PL02 2:51 16:9). Channel creation = James's click; long goes up UNLISTED for his approval.
+
+## Known limits
+- Arcade (What's Poppin) renders soft: Phaser Scale.FIT on a fixed logical canvas. Fix = render at devicePixelRatio.
+- iOS/Android wrapper (Capacitor) not started; PWA install works today.
+- No telemetry by design; channel-to-game clicks unmeasurable until a `?ref=` counter exists.
