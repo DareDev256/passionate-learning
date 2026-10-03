@@ -27,11 +27,12 @@ The running ledger. Read this first after any context reset. Spec: `2026-10-03-u
 - [x] spec + notes
 - [x] scaffold app/, deps, 0 vulns
 - [x] content model + validator; 4 live worlds (prompt, token, cap, redteam) = 60 cards; 5 soon worlds
-- [ ] stick art React wrapper, logo, System window, meme cards
-- [ ] engine (round state, grading, XP, FSRS via template lib), profile (rank, days played, daily quest)
-- [ ] pages: home/map, world, round, recap, arcade, settings; PWA manifest + SW + icons
-- [ ] tests, build, screenshots desktop + 390px, critic pass
-- [ ] deploy Vercel project passionate-learning
+- [x] stick art React wrapper, logo, System window, meme cards
+- [x] engine (own save.ts + round.ts on ts-fsrs; template lib dropped except soundEngine), profile (rank, days, quest)
+- [x] pages: home/map, world, round (6 card types + reaction zone + drawer), recap, arcade, about; PWA manifest + SW + icons + og
+- [x] tests 18/18, build, screenshots desktop + 390px (docs/screenshots/2026-10-03_pl-*)
+- [x] deployed: https://passionate-learning.vercel.app (Vercel project passionate-learning, ./ship.sh, headers verified, live round + arcade 0 errors)
+- [ ] blind critic pass (subagent cap parked 17:4x per CLAUDE.md fan-out rule)
 - [ ] port Bias, Tools, Circuit, Net, Keys
 - [ ] public repo + CONTRIBUTING + site link updates
 - [ ] YouTube kit + Short + long draft
