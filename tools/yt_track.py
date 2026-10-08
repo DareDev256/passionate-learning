@@ -32,7 +32,7 @@ CHANNELS = [
      'id': 'UC0uo4EuWaUgZFTsH4HsOCvg', 'token': 'youtube-token.json', 'color': 0xFF7043},
     # Title is WatchMePlay2D; the handle is @watchmeplay14 (verified via channels.list forHandle, 2026-10-08).
     {'key': 'watchmeplay2d', 'name': 'WatchMePlay2D', 'handle': '@watchmeplay14',
-     'id': 'UCcqHLdd8nF3PVMWpvTxiCIQ', 'token': None, 'color': 0x26A69A},
+     'id': 'UCcqHLdd8nF3PVMWpvTxiCIQ', 'token': 'youtube-token-watchmeplay.json', 'color': 0x26A69A},
 ]
 PUBLIC_NOTE = '(public view: no channel token)'
 
@@ -173,8 +173,14 @@ def report(rows):
         lines.append('7d: no baseline yet (first snapshot)')
     vids = sorted(cur['videos'], key=lambda v: v['views'], reverse=True)
     lines.append('')
+    # A channel with a back catalogue of old private uploads (WatchMePlay2D has ~19 from 2011-13) would bury the
+    # numbers under them every day. Scheduled uploads always show; unscheduled non-public ones collapse to a count past 5.
+    idle = [v for v in vids if v['privacy'] != 'public' and not v.get('publish_at')]
+    hide = len(idle) > 5
     for v in vids:
         if v['privacy'] != 'public':
+            if hide and not v.get('publish_at'):
+                continue
             when = f" → {v['publish_at'][:16].replace('T', ' ')}Z" if v.get('publish_at') else ''
             lines.append(f"⏳ {v['title'][:60]} ({v['privacy']}{when})")
             continue
@@ -183,6 +189,8 @@ def report(rows):
         week = f", 7d {v['views'] - w['views']:+d}" if w else ''
         lines.append(f"{v['views']:>5} views{d(v['views'], p and p['views'])}{week}"
                      f" · {v['likes']}♥ {v['comments']}💬 · {v['title'][:60]}{new}")
+    if hide:
+        lines.append(f"_{len(idle)} private/unlisted uploads with no release date not listed_")
     return '\n'.join(lines)
 
 
