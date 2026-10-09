@@ -57,7 +57,9 @@ def cmd_upload(a):
     resp = None
     while resp is None: _, resp = req.next_chunk()
     vid = resp['id']
-    if a.thumb: y.thumbnails().set(videoId=vid, media_body=MediaFileUpload(a.thumb)).execute()
+    if a.thumb:  # custom thumbnails need a phone-verified channel; the video is already up, so say so and carry on
+        try: y.thumbnails().set(videoId=vid, media_body=MediaFileUpload(a.thumb)).execute(); print('thumbnail set', flush=True)
+        except Exception as e: print(f'THUMBNAIL NOT SET ({str(e)[:160]}): set it in Studio once the channel is phone-verified', flush=True)
     if a.playlist: y.playlistItems().insert(part='snippet', body={'snippet': {'playlistId': a.playlist, 'resourceId': {'kind': 'youtube#video', 'videoId': vid}}}).execute()
     print(json.dumps({'id': vid, 'url': f'https://youtu.be/{vid}', 'privacy': resp['status']['privacyStatus'], 'publishAt': resp['status'].get('publishAt')}))
 
