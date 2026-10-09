@@ -4,7 +4,8 @@ pace YouTube allows. New channels get a daily upload cap ("uploadLimitExceeded")
 James to remember to come back.
 
 Each queue line: {"ep","mp4","title","description_file","tags","privacy","publish_at","playlist",
-                  optional "thumb", optional "replace": "<old video id to delete once the new one reads back>"}
+                  optional "thumb", optional "replace": "<old video id to delete once the new one reads back>",
+                  optional "replace_privacy": ["private"] (default; add "unlisted" to replace an unapproved unlisted long)}
 Done lines are appended to upload-queue.done.jsonl ({"ep","id","at"}), so a re-run never double-uploads.
 
 A Short whose slot has passed is re-slotted to the next free 08/12/19 ET slot (logged), never published late silently.
@@ -110,7 +111,7 @@ for q in live:
         except Exception as e: problems.append(f"{q['ep']}: thumbnail not set ({str(e)[:120]})")
     if q.get('replace'):  # delete the copy this one replaces, only once the new one is confirmed and only if the old one is still private
         old = y.videos().list(part='status', id=q['replace']).execute().get('items', [])
-        if old and old[0]['status']['privacyStatus'] == 'private': y.videos().delete(id=q['replace']).execute(); print('deleted replaced', q['replace'])
+        if old and old[0]['status']['privacyStatus'] in q.get('replace_privacy', ['private']): y.videos().delete(id=q['replace']).execute(); print('deleted replaced', q['replace'])
         elif old: problems.append(f"{q['ep']}: old copy {q['replace']} is {old[0]['status']['privacyStatus']}; NOT deleted, check for a duplicate")
     with DONE.open('a') as f: f.write(json.dumps({'ep': q['ep'], 'id': vid, 'at': now.isoformat(timespec='seconds')}) + '\n')
     print('uploaded', q['ep'], vid, q.get('publish_at') or q.get('privacy'))
