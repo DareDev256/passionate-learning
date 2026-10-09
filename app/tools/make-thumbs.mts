@@ -40,6 +40,14 @@ const THUMBS: Record<string, string> = {
     ${fig({ robot: true, pose: "shrug", face: "shock", flip: true }, 3.7, 1130, 735)}
     <g transform="translate(1110,150) rotate(8)"><rect x="-120" y="-62" width="240" height="124" rx="14" fill="#ff3b1f" stroke="#0a0a0a" stroke-width="7"/>
     <text text-anchor="middle" dominant-baseline="central" font-family="AB" font-size="64" fill="#fff">NOPE</text></g>`),
+  // PL23: the channel fact-checks itself; the hook is our own public line, struck and stamped
+  pl23: frame(`
+  <div style="position:absolute;left:56px;top:58px;font:44px/1 PH;color:#9a9a9a">we said, one week ago:</div>
+  <div style="position:absolute;left:56px;top:118px;font:96px/0.95 AB;color:#9a9a9a;text-decoration:line-through;text-decoration-color:#ff3b1f;text-decoration-thickness:12px">A CHATBOT<br>ONLY TALKS</div>
+  <div style="position:absolute;left:70px;top:350px;font:84px/1 AB;color:#ff3b1f;border:10px solid #ff3b1f;padding:8px 22px;transform:rotate(-6deg)">UPDATED</div>
+  <div style="position:absolute;left:62px;top:540px;font:58px/1 PH;color:#0a0a0a">AI moves fast (for idiots)</div>`,
+    `${fig({ pose: "pointUp", face: "shock", wear: ["hero"] }, 3.7, 900, 735)}
+    ${fig({ robot: true, pose: "cheer", face: "grin", flip: true }, 3.7, 1150, 735)}`),
 };
 
 const b = await chromium.launch();
