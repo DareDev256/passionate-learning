@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Upload queue for the Passionate Learning channel: drains ~/Creative/ai-for-idiots-channel/upload-queue.jsonl at the
+"""Upload queue for a YouTube channel (default Passionate Learning; YT_QUEUE_DIR/YT_TOKEN/YT_CHANNEL/YT_CATEGORY/YT_SLOTS
+retarget it, e.g. Train With Rawraw): drains ~/Creative/ai-for-idiots-channel/upload-queue.jsonl at the
 pace YouTube allows. New channels get a daily upload cap ("uploadLimitExceeded"); this exists so a batch never needs
 James to remember to come back.
 
@@ -27,7 +28,10 @@ from googleapiclient.errors import HttpError, ResumableUploadError
 import os
 KIT = Path(os.environ.get('YT_QUEUE_DIR', Path.home() / 'Creative/ai-for-idiots-channel'))
 QUEUE, DONE = KIT / 'upload-queue.jsonl', KIT / 'upload-queue.done.jsonl'
-TOKEN = Path.home() / '.secrets/youtube-token-passionate-learning.json'
+TOKEN = Path(os.environ.get('YT_TOKEN', Path.home() / '.secrets/youtube-token-passionate-learning.json'))
+CHANNEL = os.environ.get('YT_CHANNEL', 'Passionate Learning')  # the token must act for this channel
+CATEGORY = os.environ.get('YT_CATEGORY', '27')                  # 27 Education; 17 Sports for Train With Rawraw
+SLOT_HOURS = os.environ.get('YT_SLOTS', '12,16,23').split(',')   # UTC hours a re-slot may use
 DRY = '--dry-run' in sys.argv
 now = dt.datetime.now(dt.timezone.utc)
 
@@ -45,7 +49,7 @@ c = Credentials.from_authorized_user_file(str(TOKEN))
 if not c.valid: c.refresh(Request())
 y = build('youtube', 'v3', credentials=c, cache_discovery=False)
 me = y.channels().list(part='snippet,contentDetails', mine=True).execute()['items'][0]
-if me['snippet']['title'] != 'Passionate Learning': sys.exit(f"refusing: token acts for {me['snippet']['title']}")
+if me['snippet']['title'] != CHANNEL: sys.exit(f"refusing: token acts for {me['snippet']['title']}")
 
 # Re-slot instead of missing: a queued Short whose slot is gone (or under 45 min away) moves to the next free
 # 08:00 / 12:00 / 19:00 ET slot (12:00Z / 16:00Z / 23:00Z) that no scheduled video and no other queue item holds.
@@ -68,7 +72,7 @@ if due:
     day = now.date()
     for q in due:
         while True:
-            free = [f"{day}T{h}:00:00Z" for h in ('12', '16', '23') if at(f"{day}T{h}:00:00Z") > now + dt.timedelta(minutes=90) and f"{day}T{h}:00:00Z" not in taken]
+            free = [f"{day}T{h}:00:00Z" for h in SLOT_HOURS if at(f"{day}T{h}:00:00Z") > now + dt.timedelta(minutes=90) and f"{day}T{h}:00:00Z" not in taken]
             if free: break
             day += dt.timedelta(days=1)
         moved.append(f"{q['ep']}: {q['publish_at']} -> {free[0]}"); q['publish_at'] = free[0]; taken.add(free[0])
@@ -91,7 +95,7 @@ if DRY:
 
 capped = False
 for q in live:
-    body = {'snippet': {'title': q['title'], 'description': Path(q['description_file']).read_text().strip(), 'categoryId': '27',
+    body = {'snippet': {'title': q['title'], 'description': Path(q['description_file']).read_text().strip(), 'categoryId': CATEGORY,
                         'tags': [t.strip() for t in q.get('tags', '').split(',') if t.strip()], 'defaultLanguage': 'en', 'defaultAudioLanguage': 'en'},
             'status': {'privacyStatus': q.get('privacy', 'private'), 'selfDeclaredMadeForKids': False}}
     if q.get('publish_at'): body['status']['privacyStatus'] = 'private'; body['status']['publishAt'] = q['publish_at']
