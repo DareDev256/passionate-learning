@@ -29,7 +29,7 @@ CHANNELS = [
     {'key': 'passionate-learning', 'name': 'Passionate Learning', 'handle': '@PassionateLearningHQ',
      'id': 'UCuOGggeRly1PMGhNIB-JmVw', 'token': 'youtube-token-passionate-learning.json', 'color': 0x7C4DFF},
     {'key': 'many-roads', 'name': 'Many Roads Game', 'handle': '@playmanyroads',
-     'id': 'UC0uo4EuWaUgZFTsH4HsOCvg', 'token': 'youtube-token.json', 'color': 0xFF7043},
+     'id': 'UC0uo4EuWaUgZFTsH4HsOCvg', 'token': 'youtube-token-many-roads.json', 'color': 0xFF7043},
     # Title is WatchMePlay2D; the handle is @watchmeplay14 (verified via channels.list forHandle, 2026-10-08).
     {'key': 'watchmeplay2d', 'name': 'WatchMePlay2D', 'handle': '@watchmeplay14',
      'id': 'UCcqHLdd8nF3PVMWpvTxiCIQ', 'token': 'youtube-token-watchmeplay.json', 'color': 0x26A69A},
