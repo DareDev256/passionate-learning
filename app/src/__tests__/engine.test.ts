@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { WORLDS, getWorld, cardKey } from "@/content";
 import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
 import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest, motionClass } from "@/lib/save";
 import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
+import { RESUME_KEY, RESUME_MAX_MS, saveInProgress, loadInProgress, clearInProgress, type InProgress } from "@/lib/roundResume";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
 
 describe("content", () => {
@@ -176,5 +177,42 @@ describe("unit lock", () => {
   });
   it("an unknown unit is not open", () => {
     expect(isUnitOpen(prompt, "nope", freshSave())).toBe(false);
+  });
+});
+
+describe("roundResume", () => {
+  const mem = new Map<string, string>();
+  beforeEach(() => {
+    mem.clear();
+    (globalThis as unknown as { localStorage: Storage }).localStorage = {
+      getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v),
+      removeItem: (k: string) => void mem.delete(k), clear: () => mem.clear(), key: () => null, length: 0,
+    } as Storage;
+  });
+  const now = 1_000_000_000_000;
+  const p: InProgress = { world: "prompt", unit: "basics", seed: 42, idx: 2, answers: [{ key: "a", correct: true, review: false }, { key: "b", correct: false, review: true }], spentMs: 9000, roundXp: 10, combo: 0, savedAt: now };
+  it("round-trips the same object", () => {
+    saveInProgress(p);
+    expect(loadInProgress("prompt", "basics", now)).toEqual(p);
+  });
+  it("returns null for another unit", () => {
+    saveInProgress(p);
+    expect(loadInProgress("prompt", "other", now)).toBeNull();
+    expect(loadInProgress("other", "basics", now)).toBeNull();
+  });
+  it("returns null once older than 30 minutes", () => {
+    saveInProgress(p);
+    expect(loadInProgress("prompt", "basics", now + RESUME_MAX_MS - 1000)).not.toBeNull();
+    expect(loadInProgress("prompt", "basics", now + 31 * 60 * 1000)).toBeNull();
+  });
+  it("returns null for corrupt JSON without throwing", () => {
+    mem.set(RESUME_KEY, "{not json");
+    expect(loadInProgress("prompt", "basics", now)).toBeNull();
+    mem.set(RESUME_KEY, "null");
+    expect(loadInProgress("prompt", "basics", now)).toBeNull();
+  });
+  it("clear removes it", () => {
+    saveInProgress(p); clearInProgress();
+    expect(loadInProgress("prompt", "basics", now)).toBeNull();
   });
 });

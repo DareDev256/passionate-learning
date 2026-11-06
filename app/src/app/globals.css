@@ -361,3 +361,9 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
   .drawer .btn { grid-column: 1; }
   .drawer { max-height: 52dvh; }
 }
+
+/* Confirm sheet */
+.sheet-back { position: fixed; inset: 0; z-index: 60; background: rgba(10, 10, 10, 0.55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 520px; background: var(--paper); border: 3px solid var(--ink); border-bottom: 0; border-radius: 22px 22px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); display: grid; gap: 12px; }
+.sheet h2 { margin: 0; font: 400 24px/1.1 var(--display); }
+.sheet p { margin: 0 0 4px; font: 400 20px/1.2 var(--hand); }

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getUnit, getWorld } from "@/content";
 import { Stick } from "@/art/Stick";
@@ -9,6 +10,8 @@ import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
 import { applyRound, buildRound, grade, type Answer, type Response, type RoundResult, BASE_XP, TARGET_SECONDS, SPEED_BONUS } from "@/lib/round";
 import { LockedScreen } from "./LockedScreen";
+import { ConfirmSheet } from "./ConfirmSheet";
+import { clearInProgress, loadInProgress, saveInProgress } from "@/lib/roundResume";
 import { blockingUnit } from "@/lib/unlock";
 import { isCleared, levelOf, recallMultiplier, unitKey } from "@/lib/save";
 import { playCorrect, playIncorrect, playCelebration, playAchievement } from "@/lib/soundEngine";
@@ -31,17 +34,22 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const world = getWorld(worldId)!;
   const unit = getUnit(worldId, unitId)!;
   const { save, update, ready } = useSave();
-  const [seed] = useState(() => Date.now());
+  const router = useRouter();
+  // A round the app was backgrounded in is restored before the round is built, so the same seed rebuilds the same cards.
+  const [stored] = useState(() => (typeof window === "undefined" ? null : loadInProgress(worldId, unitId)));
+  const [seed, setSeed] = useState(() => stored?.seed ?? Date.now());
   const blocker = ready ? blockingUnit(world, unitId, save) : null;
   const round = useMemo(() => (ready && !blocker ? buildRound(world, unit, save, seed) : []), [ready, !!blocker, seed]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  // Restore to the next unanswered card: an answered card whose NEXT was never pressed would otherwise count twice.
+  const [idx, setIdx] = useState(stored?.answers.length ?? 0);
+  const [answers, setAnswers] = useState<Answer[]>(stored?.answers ?? []);
   const [done, setDone] = useState<{ r: Response; ok: boolean } | null>(null);
-  const [combo, setCombo] = useState(0);
+  const [combo, setCombo] = useState(stored?.combo ?? 0);
   const [result, setResult] = useState<RoundResult | null>(null);
-  const [roundXp, setRoundXp] = useState(0);
+  const [roundXp, setRoundXp] = useState(stored?.roundXp ?? 0);
+  const [confirming, setConfirming] = useState(false);
   // Thinking time only: the clock runs while a card is waiting for an answer, never while you read the feedback.
-  const spent = useRef(0);
+  const spent = useRef(stored?.spentMs ?? 0);
   const askStart = useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   useEffect(() => {
@@ -50,6 +58,34 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   }, []);
   useEffect(() => { if (ready && !done && !result) askStart.current = performance.now(); }, [ready, idx, done, result]);
 
+  // A stored round that no longer matches the rebuilt one (content changed, or it was already fully answered) starts fresh.
+  useEffect(() => {
+    if (!stored || !ready || blocker || !round.length) return;
+    const stale = stored.answers.length >= round.length || stored.answers.some((a, i) => a.key !== round[i].key);
+    if (stale && seed === stored.seed && answers === stored.answers) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      clearInProgress(); spent.current = 0; setSeed(Date.now()); setIdx(0); setAnswers([]); setCombo(0); setRoundXp(0);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [stored, ready, blocker, round]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Latest values for the backgrounding listener, which must not re-subscribe on every render.
+  const live = useRef({ seed, answers, combo, roundXp, active: false });
+  useEffect(() => { live.current = { seed, answers, combo, roundXp, active: ready && !blocker && !result && round.length > 0 }; });
+  function persist(p: Partial<typeof live.current> = {}) {
+    const l = { ...live.current, ...p };
+    if (!l.active || !l.answers.length) return;
+    const think = askStart.current !== null ? performance.now() - askStart.current : 0;
+    saveInProgress({ world: worldId, unit: unitId, seed: l.seed, idx: l.answers.length, answers: l.answers, spentMs: spent.current + think, roundXp: l.roundXp, combo: l.combo, savedAt: Date.now() });
+  }
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === "hidden") persist(); };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  });
+
+  function leave() { clearInProgress(); router.push(`/w/${world.id}/`); }
+
   const rc = round[idx];
   const levelBefore = levelOf(save.xp);
 
@@ -57,10 +93,14 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     if (!rc || done) return;
     const ok = grade(rc.card, r);
     if (askStart.current !== null) { spent.current += performance.now() - askStart.current; askStart.current = null; }
-    if (ok) setRoundXp(roundXp + BASE_XP * recallMultiplier(save.cards[rc.key]));
+    const newXp = ok ? roundXp + BASE_XP * recallMultiplier(save.cards[rc.key]) : roundXp;
+    const newAnswers = [...answers, { key: rc.key, correct: ok, review: rc.review }];
+    const newCombo = ok ? combo + 1 : 0;
+    setRoundXp(newXp);
     setDone({ r, ok });
-    setCombo(ok ? combo + 1 : 0);
-    setAnswers([...answers, { key: rc.key, correct: ok, review: rc.review }]);
+    setCombo(newCombo);
+    setAnswers(newAnswers);
+    persist({ answers: newAnswers, roundXp: newXp, combo: newCombo });
     if (save.settings.sound) (ok ? playCorrect : playIncorrect)();
   }
 
@@ -68,12 +108,13 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     if (idx + 1 < round.length) { setIdx(idx + 1); setDone(null); return; }
     const res = applyRound(save, world, unit, answers, new Date(), spent.current / 1000);
     update(res.save);
+    clearInProgress();
     setResult(res);
     if (save.settings.sound) (res.rankAfter !== res.rankBefore ? playAchievement : playCelebration)();
   }
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (done && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); } };
+    const onKey = (e: KeyboardEvent) => { if (done && !confirming && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
@@ -89,7 +130,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   return (
     <main className="round" style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
       <div className="round-top">
-        <Link className="x" href={`/w/${world.id}/`} aria-label="Quit round">✕</Link>
+        <button type="button" className="x" aria-label="Quit round" onClick={() => (answers.length ? setConfirming(true) : leave())}>✕</button>
         <div className="segs" aria-label={`Card ${idx + 1} of ${round.length}`}>
           {round.map((_, i) => <i key={i} className={i < answers.length ? (answers[i].correct ? "ok" : "no") : i === idx ? "now" : ""} />)}
         </div>
@@ -126,6 +167,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
           </div>
         </section>
       )}
+      {confirming && <ConfirmSheet title="Leave this round?" body="Your answers so far won't count." keepLabel="Keep playing" leaveLabel="Leave" onKeep={() => setConfirming(false)} onLeave={leave} />}
     </main>
   );
 }
