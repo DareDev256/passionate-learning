@@ -2,6 +2,19 @@
 
 Design, 2026-11-06. Written by Claude with full authority from James (13:45 EST: "Don't ask me questions, you got this. Make an artifact of everything you decided. After V1 I will make reiterations… go nuts"). James reviews and iterates after V1 ships to TestFlight. Every decision below marked **(J)** is James's; everything else is Claude's call and can be changed.
 
+## Changed after the red team (14:05 EST, overrides anything below that disagrees)
+
+A fresh-context reviewer (fable-advisor) read this design and the code. Its verdict: sound in intent, but three to four apps in one, and the sync model contradicted the anti-cheat promise. Adopted:
+
+1. **Phone first.** The order is now: shell and audit fixes on TestFlight with no backend → local progression → accounts → leagues → modes → worlds and feel → gauntlet and store (table under Phases).
+2. **Save v2 is an event log.** The save gains an append-only `events[]` (uuid, type, unit, cards, correct[], durationMs, clientTs). Server state = a fold over events; merging = union by uuid. A v1 save's XP is imported once, capped (cards seen × max per card), flagged unverified and never counts toward leagues. FSRS stays client-owned (latest `last_review` wins per card; fuzz makes a server replay non-deterministic). The local event queue IS the offline queue; "not saved yet" = unflushed events.
+3. **Email code is the required sign-in.** Convex Auth's Apple provider is a redirect flow that breaks inside WKWebView. Native Sign in with Apple goes through `@capacitor-community/apple-sign-in` → identity token → a Convex credentials provider that verifies Apple's JWT; web uses the redirect. If that costs more than one session it moves to V1.1 (4.8 only applies with a third-party login). Email needs a sender (Resend) and DNS records on stiersolutions.ca: set up in the accounts phase.
+4. **Leagues with few players:** promote `min(7, ceil(n/4))` and only players over a weekly XP floor; credit uses the server's receipt time, never the client clock; cohorts form by division at the start of the week.
+5. **Anti-cheat stays small:** plausibility caps and quiet exclusion from promotion. No device attestation, no signed rounds.
+6. **Scope:** the Apple Watch app is cut (it isn't a 4.2 shield). Prompt Prix Couch mode moves to V1.1. James asked for a Scrabble-style game and a group kart game by name, so Word Forge and Prompt Prix (Ghost Cup and the live Party Room) stay in V1, in the last build phase, where they can't hold up anything else. The new card types (audit #7) are built with the new worlds.
+7. **Age:** no birth-year gate (it would mean collecting age). The 13+ rating and the age questionnaire, answered consistently with leaderboards and handles, are enough.
+8. **App Review landmines added:** `ITSAppUsesNonExemptEncryption = false` in Info.plist; review notes say "account optional; reviewer credentials for leagues" plus the demo account; the guest league preview must read as a preview, not a locked feature; no "also on web or Android" in the metadata.
+
 ## Intent
 
 Passionate Learning becomes S-Tier Solutions' first App Store release: a free AI and tech literacy game that a normal person picks up for 60 seconds and keeps coming back to. The bar is the best learning games on the App Store and Steam (Duolingo, Brilliant, NYT Games, Kahoot, while True: learn()), judged by a fresh critic against those apps, not by us. **(J: "as good as the best learning games on App Store, Steam")**
@@ -148,15 +161,20 @@ Keep, because the audit called them the strongest parts: the hand-drawn stickman
 
 ## Phases (each ends in something that runs)
 
+Reordered after the red team. The audit fixes keep their numbers from the audit table.
+
 | Phase | Ends when |
 |---|---|
-| P1 Foundation | Convex dev deployment with auth; guest save merges into an account; Capacitor iOS shell runs the full game offline in the simulator; vitest + Playwright green |
-| P2 Progression | quests, leagues (with a simulated week), friend quests, handles, report/block, delete account, all driven end to end in a real browser |
-| P3 Modes | Bubble Pop, Scam or Legit, Daily Grid, Word Forge, Token Slicer and Prompt Prix (Ghost Cup, Party Room, Couch) playable start to scored end |
-| P4 Content | 4 new worlds and the glossary shipped, every new claim sourced and critic-passed |
-| P5 Native and feel | haptics, reminder, share card, review prompt, Duo layouts, watch companion (stretch); TestFlight build on James's Duo |
-| P6 Gauntlet | every screen at 8/10 or better against its bar, or 5 rounds done |
-| P7 Store | preflight skill green, store assets made from the build, submission gauntlet receipt, build waiting for James's submit click |
+| P1 Shell | Capacitor 8 iOS app runs the full game offline; audit fixes 6, 8 and 15, the 669 overflow and a branded 404; export-compliance key; **TestFlight build installed on James's Duo** (no backend yet) |
+| P2 Local progression | Save v2 event log; onboarding card, home path, recap with "fix your mistakes" and unlock messaging, three quests with a chest, profile page, "see this again Thursday" (audit 1, 2, 4, 5, 10, 12, 13), all local and offline |
+| P3 Accounts | Convex dev deployment, email code sign-in (Resend + DNS), event sync and merge, delete account, handles with filter, report and block, demo account; authz audit at 0 |
+| P4 Leagues and friends | weekly leagues with the few-players rule and a simulated week; friend quests by link or code and auto-match |
+| P5 Modes A | Bubble Pop, Scam or Legit (with the Scam Radar world), The Daily Grid (with the glossary), Token Slicer, and the Games hub (audit 9) |
+| P6 Worlds and feel | Deepfake Detector, Code Dojo, AI at Work with new card types; haptics, reminder, share card, review prompt, iPhone Duo layouts, native Sign in with Apple (or V1.1) |
+| P7 Modes B | Word Forge; Prompt Prix Ghost Cup and the live Party Room |
+| P8 Gauntlet and store | every screen at 8/10 or better against its bar, or 5 rounds; preflight skill green; store assets from the build; submission gauntlet receipt; build waiting for James's submit click |
+
+V1.1: Prompt Prix Couch mode, the Apple Watch app, "explain my answer" with a model call.
 
 ## Done when (ship-it gates)
 
