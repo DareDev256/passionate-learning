@@ -8,6 +8,8 @@ import { CardView, correctText } from "./CardView";
 import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
 import { applyRound, buildRound, grade, type Answer, type Response, type RoundResult, BASE_XP, TARGET_SECONDS, SPEED_BONUS } from "@/lib/round";
+import { LockedScreen } from "./LockedScreen";
+import { blockingUnit } from "@/lib/unlock";
 import { isCleared, levelOf, recallMultiplier, unitKey } from "@/lib/save";
 import { playCorrect, playIncorrect, playCelebration, playAchievement } from "@/lib/soundEngine";
 import type { Face, Pose } from "@/content/types";
@@ -30,7 +32,8 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const unit = getUnit(worldId, unitId)!;
   const { save, update, ready } = useSave();
   const [seed] = useState(() => Date.now());
-  const round = useMemo(() => (ready ? buildRound(world, unit, save, seed) : []), [ready, seed]); // eslint-disable-line react-hooks/exhaustive-deps
+  const blocker = ready ? blockingUnit(world, unitId, save) : null;
+  const round = useMemo(() => (ready && !blocker ? buildRound(world, unit, save, seed) : []), [ready, !!blocker, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [done, setDone] = useState<{ r: Response; ok: boolean } | null>(null);
@@ -75,6 +78,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  if (blocker) return <LockedScreen world={world} unit={unit} blocker={blocker} />;
   if (!ready || !rc) return <main className="round"><p className="bubble">Shuffling cards...</p></main>;
   if (result) return <Recap world={world} unitId={unitId} result={result} levelBefore={levelBefore} />;
 

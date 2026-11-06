@@ -3,6 +3,7 @@ import { WORLDS, getWorld, cardKey } from "@/content";
 import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
 import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest } from "@/lib/save";
+import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
 
 describe("content", () => {
@@ -133,5 +134,30 @@ describe("rounds", () => {
   });
   it("shuffle keeps every item", () => {
     expect(shuffle([1, 2, 3, 4, 5], 7).sort()).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe("unit lock", () => {
+  const prompt = getWorld("prompt")!;
+  const [first, second] = prompt.units;
+  it("the first unit is always open", () => {
+    expect(unitIndex(prompt, first.id)).toBe(0);
+    expect(isUnitOpen(prompt, first.id, freshSave())).toBe(true);
+  });
+  it("the second unit is locked on a fresh save", () => {
+    expect(isUnitOpen(prompt, second.id, freshSave())).toBe(false);
+  });
+  it("clearing the first unit opens the second", () => {
+    const s = freshSave();
+    s.units["prompt/say-it"] = { last: [0.7], best: 0.7, rounds: 1 };
+    expect(isUnitOpen(prompt, second.id, s)).toBe(true);
+    expect(blockingUnit(prompt, second.id, s)).toBeNull();
+  });
+  it("blockingUnit names the unit to finish first", () => {
+    expect(blockingUnit(prompt, second.id, freshSave())?.id).toBe("say-it");
+    expect(blockingUnit(prompt, first.id, freshSave())).toBeNull();
+  });
+  it("an unknown unit is not open", () => {
+    expect(isUnitOpen(prompt, "nope", freshSave())).toBe(false);
   });
 });

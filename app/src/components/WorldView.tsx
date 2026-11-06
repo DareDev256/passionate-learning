@@ -1,20 +1,36 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { getWorld } from "@/content";
 import { Stick } from "@/art/Stick";
 import { useSave } from "@/lib/useSave";
 import { isCleared, isMastered, unitKey } from "@/lib/save";
+import { blockingUnit, isUnitOpen } from "@/lib/unlock";
 
 /** A winding path of unit nodes. The guide stands at the next node to play; it pulses. */
 export function WorldView({ worldId }: { worldId: string }) {
   const w = getWorld(worldId)!;
   const { save } = useSave();
+  const [shaking, setShaking] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function pressLocked(unitId: string) {
+    const blocker = blockingUnit(w, unitId, save);
+    if (!blocker) return;
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShaking(unitId);
+      timers.current.push(window.setTimeout(() => setShaking(null), 400));
+    }
+    setToast(`Finish "${blocker.title}" first`);
+    timers.current.push(window.setTimeout(() => setToast(null), 2500));
+  }
   const style = { ["--wa" as string]: w.accent } as React.CSSProperties;
   const xs = [50, 74, 50, 26, 50, 74, 50]; // percent across, a gentle S
   const STEP = 150;
   const states = w.units.map((u, i) => {
     const p = save.units[unitKey(w.id, u.id)];
-    const open = i === 0 || isCleared(save.units[unitKey(w.id, w.units[i - 1].id)]);
+    const open = isUnitOpen(w, u.id, save);
     return { u, p, open, cleared: isCleared(p), mastered: isMastered(p) };
   });
   const here = states.findIndex((s) => s.open && !s.cleared);
@@ -46,15 +62,24 @@ export function WorldView({ worldId }: { worldId: string }) {
                   <Stick {...w.guide} size={58} />
                 </span>
               )}
-              <Link
-                href={`/play/${w.id}/${s.u.id}/`}
-                className={`node ${s.open ? "" : "locked"} ${s.cleared ? "cleared" : ""} ${s.mastered ? "mastered" : ""} ${isHere ? "here" : ""}`}
-                aria-disabled={!s.open}
-                tabIndex={s.open ? 0 : -1}
-                aria-label={`Unit ${i + 1}: ${s.u.title}${s.mastered ? ", mastered" : s.cleared ? ", cleared" : s.open ? "" : ", locked"}`}
-              >
-                {label}
-              </Link>
+              {s.open ? (
+                <Link
+                  href={`/play/${w.id}/${s.u.id}/`}
+                  className={`node ${s.cleared ? "cleared" : ""} ${s.mastered ? "mastered" : ""} ${isHere ? "here" : ""}`}
+                  aria-label={`Unit ${i + 1}: ${s.u.title}${s.mastered ? ", mastered" : s.cleared ? ", cleared" : ""}`}
+                >
+                  {label}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className={`node locked ${shaking === s.u.id ? "shake" : ""}`}
+                  onClick={() => pressLocked(s.u.id)}
+                  aria-label={`Unit ${i + 1}: ${s.u.title}, locked`}
+                >
+                  {label}
+                </button>
+              )}
               <span className="node-title">{s.u.title}</span>
               <span className="node-blurb">{isHere ? "you are here" : s.p ? `best ${Math.round(s.p.best * 100)}%` : s.u.blurb}</span>
             </div>
@@ -62,6 +87,7 @@ export function WorldView({ worldId }: { worldId: string }) {
         })}
       </div>
       <p className="foot">Clear a unit at 70% to open the next. ★ = mastered (90% over your last 3 rounds). Old cards come back on purpose: that&apos;s how memory sticks.</p>
+      {toast && <div className="locked-toast" role="status">{toast}</div>}
     </main>
   );
 }
