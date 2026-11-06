@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "validate": "tsx scripts/validate-content.ts"
+    "validate": "tsx scripts/validate-content.ts",
+    "e2e": "playwright test",
+    "e2e:build": "npm run build && playwright test"
   },
   "dependencies": {
     "@fontsource/archivo": "^5.2.5",
