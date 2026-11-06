@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { StickDefs } from "@/art/Stick";
+import { MotionClass } from "@/components/MotionClass";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
 
@@ -19,11 +20,12 @@ export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <StickDefs />
         {children}
         <ServiceWorker />
+        <MotionClass />
       </body>
     </html>
   );

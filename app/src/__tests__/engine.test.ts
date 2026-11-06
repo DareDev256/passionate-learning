@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { WORLDS, getWorld, cardKey } from "@/content";
 import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
-import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest } from "@/lib/save";
+import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest, motionClass } from "@/lib/save";
 import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
 
@@ -27,6 +27,23 @@ describe("content", () => {
   it("card keys are unique across every world", () => {
     const keys = WORLDS.flatMap((w) => w.units.flatMap((u) => u.cards.map((c) => cardKey(w.id, c))));
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("settings", () => {
+  it("fills missing settings with defaults", () => {
+    expect(sanitize({ v: 1, settings: { sound: false } }).settings).toEqual({ sound: false, haptics: true, motion: "system", name: "" });
+  });
+  it("rejects malformed haptics and motion", () => {
+    const st = sanitize({ v: 1, settings: { haptics: "yes", motion: "wild" } }).settings;
+    expect(st.haptics).toBe(true);
+    expect(st.motion).toBe("system");
+  });
+  it("keeps valid values and a fresh save is system motion", () => {
+    expect(sanitize({ v: 1, settings: { haptics: false, motion: "reduce" } }).settings).toMatchObject({ haptics: false, motion: "reduce" });
+    expect(freshSave().settings.motion).toBe("system");
+    expect(motionClass("reduce")).toBe("reduce-motion");
+    expect(motionClass("full")).toBe("");
   });
 });
 

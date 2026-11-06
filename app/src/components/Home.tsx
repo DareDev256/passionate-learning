@@ -47,6 +47,7 @@ export function Home() {
           <span className="chip rank" title="Rank">RANK <b>{r.rank}</b></span>
           <span className="chip lv" title="Level">LV {levelOf(save.xp)}</span>
           <Link className="chip" href="/arcade/" title="Arcade tokens">🎟 {save.tokens}</Link>
+          <Link className="chip chip-btn" href="/settings/" aria-label="Settings" title="Settings">⚙</Link>
         </div>
       </header>
 

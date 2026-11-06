@@ -17,7 +17,7 @@ export default function About() {
       <h2 className="h2">Build it with us</h2>
       <p>Passionate Learning is open source. A new world is one data file: write cards, open a pull request, and it ships to everyone. Game designers, teachers and people who just learned something: all welcome.</p>
       <p><a className="btn" href="https://github.com/DareDev256/passionate-learning">CONTRIBUTE ON GITHUB</a></p>
-      <p className="foot">v{pkg.version} · catalogue {CATALOGUE_DATE} · {WORLDS.length} worlds · {cards} cards · made by <a href="https://jamesdare.com">James Dare</a> (DareDev256), Toronto</p>
+      <p className="foot">v{pkg.version} · catalogue {CATALOGUE_DATE} · {WORLDS.length} worlds · {cards} cards · made by <a href="https://jamesdare.com">James Dare</a> (DareDev256), Toronto · <Link href="/privacy/">privacy</Link> · <Link href="/support/">support</Link></p>
     </main>
   );
 }

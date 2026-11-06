@@ -26,6 +26,9 @@ export interface UnitProgress {
   rounds: number;
 }
 
+export type MotionPref = "system" | "reduce" | "full";
+export interface Settings { sound: boolean; haptics: boolean; motion: MotionPref; name: string }
+
 export interface Save {
   v: 1;
   xp: number;
@@ -35,13 +38,13 @@ export interface Save {
   units: Record<string, UnitProgress>;
   quest: { date: string; round: boolean; review: boolean; perfect: boolean };
   tokens: number;
-  settings: { sound: boolean; name: string };
+  settings: Settings;
 }
 
 export const today = (d = new Date()) => d.toLocaleDateString("en-CA");
 
 export function freshSave(): Save {
-  return { v: 1, xp: 0, days: [], cards: {}, units: {}, quest: { date: today(), round: false, review: false, perfect: false }, tokens: 0, settings: { sound: true, name: "" } };
+  return { v: 1, xp: 0, days: [], cards: {}, units: {}, quest: { date: today(), round: false, review: false, perfect: false }, tokens: 0, settings: { sound: true, haptics: true, motion: "system", name: "" } };
 }
 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
@@ -56,9 +59,12 @@ export function sanitize(raw: unknown): Save {
   if (isObj(raw.units)) for (const [k, v] of Object.entries(raw.units)) if (isObj(v) && Array.isArray(v.last)) s.units[k] = { last: (v.last as unknown[]).filter((n): n is number => typeof n === "number").slice(-3), best: Number(v.best) || 0, rounds: Number(v.rounds) || 0 };
   if (isObj(raw.quest) && typeof raw.quest.date === "string") s.quest = { date: raw.quest.date, round: !!raw.quest.round, review: !!raw.quest.review, perfect: !!raw.quest.perfect };
   if (typeof raw.tokens === "number" && raw.tokens >= 0) s.tokens = Math.floor(raw.tokens);
-  if (isObj(raw.settings)) s.settings = { sound: raw.settings.sound !== false, name: typeof raw.settings.name === "string" ? raw.settings.name.slice(0, 24) : "" };
+  if (isObj(raw.settings)) s.settings = { sound: raw.settings.sound !== false, haptics: raw.settings.haptics !== false, motion: raw.settings.motion === "reduce" || raw.settings.motion === "full" ? raw.settings.motion : "system", name: typeof raw.settings.name === "string" ? raw.settings.name.slice(0, 24) : "" };
   return s;
 }
+
+/** The class the `<html>` element carries for a motion preference. */
+export const motionClass = (m: MotionPref): "" | "reduce-motion" => (m === "reduce" ? "reduce-motion" : "");
 
 export function loadSave(): Save {
   if (typeof window === "undefined") return freshSave();

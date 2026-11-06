@@ -329,8 +329,30 @@ a { color: inherit; }
   .react-say { font-size: 18px; margin-bottom: 84px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html:not([data-motion="full"]) *, html:not([data-motion="full"]) *::before, html:not([data-motion="full"]) *::after { animation: none !important; transition: none !important; }
 }
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { animation: none !important; transition: none !important; }
+
+/* Settings, privacy, support */
+.set-group { border: 3px solid var(--ink); border-radius: 18px; background: var(--paper); box-shadow: 0 4px 0 var(--ink); padding: 4px 14px; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 0; border-bottom: 2px solid var(--soft); }
+.set-row:last-child { border-bottom: 0; }
+.set-label { font: 700 16px var(--body, inherit); }
+.set-hint { display: block; font: 400 15px var(--hand); color: var(--mid); }
+.switch { width: 64px; height: 44px; border: 3px solid var(--ink); border-radius: 999px; background: var(--soft); position: relative; cursor: pointer; flex: none; padding: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); transition: transform 0.12s; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--paper); }
+.seg { display: inline-flex; border: 3px solid var(--ink); border-radius: 12px; overflow: hidden; flex: none; }
+.seg button { min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; background: var(--paper); font: 700 13px var(--mono); cursor: pointer; }
+.seg button + button { border-left: 3px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.set-input { min-height: 44px; width: 11em; max-width: 50vw; border: 3px solid var(--ink); border-radius: 12px; padding: 0 10px; font: 400 17px var(--hand); background: var(--paper); color: var(--ink); }
+.set-link { display: flex; align-items: center; min-height: 44px; color: var(--ink); font-weight: 700; }
+.set-reset { padding: 10px 0 14px; }
+.set-reset p { margin: 0 0 10px; }
+.chip-btn { cursor: pointer; font-size: 16px; min-width: 44px; min-height: 44px; justify-content: center; text-decoration: none; color: var(--ink); }
+
 
 @media (min-width: 760px) {
   .drawer.has-meme .drawer-in { grid-template-columns: 1fr minmax(0, 340px); column-gap: 22px; }
