@@ -5,7 +5,7 @@ import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
 import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest, motionClass } from "@/lib/save";
 import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
-import { RESUME_KEY, RESUME_MAX_MS, saveInProgress, loadInProgress, clearInProgress, type InProgress } from "@/lib/roundResume";
+import { RESUME_KEY, RESUME_MAX_MS, saveInProgress, loadInProgress, peekInProgress, clearInProgress, type InProgress } from "@/lib/roundResume";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
 
 const cap = vi.hoisted(() => ({
@@ -265,5 +265,30 @@ describe("roundResume", () => {
   it("clear removes it", () => {
     saveInProgress(p); clearInProgress();
     expect(loadInProgress("prompt", "basics", now)).toBeNull();
+  });
+  it("peek returns the stored round for any unit", () => {
+    saveInProgress(p);
+    expect(peekInProgress(now)).toEqual(p);
+    const other = { ...p, world: "token", unit: "what-is-a-token" };
+    saveInProgress(other);
+    expect(peekInProgress(now)).toEqual(other);
+  });
+  it("peek returns null when nothing is stored", () => {
+    expect(peekInProgress(now)).toBeNull();
+  });
+  it("peek returns null for corrupt or malformed data without throwing", () => {
+    mem.set(RESUME_KEY, "{not json");
+    expect(peekInProgress(now)).toBeNull();
+    mem.set(RESUME_KEY, "null");
+    expect(peekInProgress(now)).toBeNull();
+    mem.set(RESUME_KEY, JSON.stringify({ ...p, world: 7 }));
+    expect(peekInProgress(now)).toBeNull();
+    mem.set(RESUME_KEY, JSON.stringify({ ...p, answers: "two" }));
+    expect(peekInProgress(now)).toBeNull();
+  });
+  it("peek returns null once older than 30 minutes", () => {
+    saveInProgress(p);
+    expect(peekInProgress(now + RESUME_MAX_MS)).not.toBeNull();
+    expect(peekInProgress(now + RESUME_MAX_MS + 1)).toBeNull();
   });
 });

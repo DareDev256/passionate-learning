@@ -27,6 +27,31 @@ test("a round survives a reload: two answered, card three showing", async ({ pag
   await expect(segs.nth(2)).toHaveClass(/now/);
 });
 
+test("Home offers the round in progress, and tapping it resumes on card three", async ({ page }) => {
+  await page.goto("/");
+  await freshPage(page);
+  await expect(page.locator("h2.h2").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Continue your round" })).toHaveCount(0);
+
+  await firstOpenRound(page);
+  const roundPath = new URL(page.url()).pathname;
+  await answerFirstCard(page); await next(page);
+  await answerFirstCard(page);
+
+  await page.goto("/");
+  const card = page.getByRole("region", { name: "Continue your round" });
+  await expect(card).toBeVisible();
+  await expect(card).toContainText("Prompt Dojo");
+  await expect(card).toContainText("You answered 2 cards so far.");
+  await card.getByRole("link", { name: /CONTINUE/ }).click();
+  await page.waitForURL((u) => u.pathname === roundPath);
+  const segs = page.locator(".segs i");
+  await expect(segs.nth(0)).toHaveClass(/ok|no/);
+  await expect(segs.nth(1)).toHaveClass(/ok|no/);
+  await expect(segs.nth(2)).toHaveClass(/now/);
+  await expect(page.locator(".drawer")).toHaveCount(0);
+});
+
 test("the quit button asks first once something is answered, and Keep playing closes it", async ({ page }) => {
   await firstOpenRound(page);
   const url = page.url();

@@ -248,7 +248,7 @@ function Recap({ world, unitId, result, levelBefore }: { world: NonNullable<Retu
         </SystemWindow>
       )}
       <div className="recap-actions">
-        {opened && nextUnit ? <Link className="btn block" href={`/play/${world.id}/${nextUnit.id}/`}>▶ NEXT: {nextUnit.title}</Link> : null}
+        {opened && nextUnit ? <Link className="btn block" href={`/play/${world.id}/${nextUnit.id}/`}>{"\u25B6\uFE0E"} NEXT: {nextUnit.title}</Link> : null}
         <button className={`btn block ${opened && nextUnit ? "ghost" : ""}`} onClick={() => location.reload()}>↻ {pct >= 70 ? "AGAIN" : "REPLAY IT NOW"}</button>
         <Link className="btn block ghost" href="/arcade/">🎟 ARCADE BREAK</Link>
         <Link className="btn block ghost" href="/">MAP</Link>

@@ -1,12 +1,44 @@
 "use client";
 import Link from "next/link";
-import { WORLDS, liveWorlds } from "@/content";
-import type { World } from "@/content/types";
+import { useEffect, useState } from "react";
+import { WORLDS, getWorld, liveWorlds } from "@/content";
+import type { Unit, World } from "@/content/types";
 import { Logo } from "@/art/Logo";
 import { Stick } from "@/art/Stick";
 import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
 import { type Save, dueKeys, isCleared, isMastered, levelOf, rankOf, unitKey } from "@/lib/save";
+import { peekInProgress } from "@/lib/roundResume";
+
+/**
+ * A round iOS closed while it was in progress. The app always relaunches at Home, so the offer to pick it up lives here.
+ * Read after mount: the static HTML is rendered without localStorage.
+ */
+function ContinueRound() {
+  const [open, setOpen] = useState<{ w: World; u: Unit; answered: number } | null>(null);
+  useEffect(() => {
+    const p = peekInProgress();
+    const w = p ? getWorld(p.world) : undefined;
+    const u = p && w?.status === "live" ? w.units.find((x) => x.id === p.unit) : undefined;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOpen(p && w && u && p.answers.length ? { w, u, answered: p.answers.length } : null);
+  }, []);
+  if (!open) return null;
+  const { w, u, answered } = open;
+  return (
+    <section className="resume" aria-label="Continue your round" style={{ ["--wa" as string]: w.accent } as React.CSSProperties}>
+      <span className="world-tag">CONTINUE YOUR ROUND</span>
+      <div className="resume-body">
+        <Stick {...w.guide} size={56} label={`${w.title} guide`} />
+        <div>
+          <span className="world-title">{w.title} · {u.title}</span>
+          <p className="resume-line">You answered {answered} card{answered === 1 ? "" : "s"} so far. Pick up right where you left off.</p>
+        </div>
+        <Link className="btn block" href={`/play/${w.id}/${u.id}/`}>{"\u25B6\uFE0E"} CONTINUE</Link>
+      </div>
+    </section>
+  );
+}
 
 /** The first unit that isn't cleared yet, in map order. */
 function nextUp(save: Save) {
@@ -51,13 +83,15 @@ export function Home() {
         </div>
       </header>
 
+      <ContinueRound />
+
       <div className="guide">
         <span className="guide-bob"><Stick pose={save.days.length ? "wave" : "point"} face={face} size={84} label="Your guide, a stickman with a red headband" /></span>
         <p className="bubble">{ready ? guideLine(save, due) : <>Loading your brain...</>}</p>
       </div>
 
       <Link className="btn block play-cta" href={`/play/${up.w.id}/${up.u.id}/`}>
-        ▶ PLAY: {up.w.title} · {up.u.title}
+        {"\u25B6\uFE0E"} PLAY: {up.w.title} · {up.u.title}
       </Link>
 
       {save.xp === 0 ? (
