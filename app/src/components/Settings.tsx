@@ -5,7 +5,7 @@ import { Logo } from "@/art/Logo";
 import { type MotionPref, type Settings as Prefs, freshSave } from "@/lib/save";
 import { useSave } from "@/lib/useSave";
 import { applyMotion } from "./MotionClass";
-import pkg from "../../package.json";
+import { clearInProgress } from "@/lib/roundResume";
 
 const MOTIONS: { id: MotionPref; label: string }[] = [{ id: "system", label: "SYSTEM" }, { id: "reduce", label: "REDUCE" }, { id: "full", label: "FULL" }];
 
@@ -27,6 +27,7 @@ export function Settings() {
   const reset = () => {
     // A progress reset, not a preferences wipe: the player keeps their settings.
     update({ ...freshSave(), settings: save.settings });
+    clearInProgress(); // a half-played round belongs to the progress that was just reset
     setTyped("");
     setDidReset(true);
   };
@@ -74,7 +75,7 @@ export function Settings() {
             <Link className="set-row set-link" href="/privacy/">Privacy</Link>
             <Link className="set-row set-link" href="/support/">Support</Link>
           </section>
-          <p className="foot">Passionate Learning v{pkg.version}</p>
+          <p className="foot">Passionate Learning v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
         </>
       )}
     </main>

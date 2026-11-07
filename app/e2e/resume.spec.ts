@@ -109,3 +109,35 @@ test("a round answered to the last card survives a reload and is applied, not th
   expect(save).toMatch(/"xp":\s*[1-9]/);
   expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
 });
+
+test("Reset progress in Settings drops the round in progress, so Home offers no Continue card", async ({ page }) => {
+  await firstOpenRound(page);
+  await answerFirstCard(page); await next(page);
+  await answerFirstCard(page);
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Continue your round" })).toBeVisible();
+
+  await page.goto("/settings/");
+  await page.getByLabel("Type RESET to confirm").fill("RESET");
+  await page.getByRole("button", { name: "RESET", exact: true }).click();
+  await expect(page.getByText("Progress reset. Fresh start.")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
+
+  await page.getByRole("link", { name: "Back to the map" }).click();
+  await expect(page.locator("h2.h2").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Continue your round" })).toHaveCount(0);
+});
+
+test("a stored round for a locked unit is cleared when its page opens", async ({ page }) => {
+  await page.goto("/");
+  await freshPage(page);
+  await page.evaluate(() => localStorage.setItem("passionate-learning:round", JSON.stringify({
+    world: "prompt", unit: "recipe", seed: 1, idx: 1, answers: [{ key: "x", correct: true, review: false }],
+    spentMs: 1000, roundXp: 10, combo: 1, savedAt: Date.now(),
+  })));
+  await page.goto("/play/prompt/recipe/");
+  await expect(page.getByText('Finish "Say what you mean" first')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Continue your round" })).toHaveCount(0);
+});

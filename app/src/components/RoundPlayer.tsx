@@ -80,6 +80,9 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   }, [stored, ready, blocker, round]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Latest values for the backgrounding listener, which must not re-subscribe on every render.
+  // A locked unit can't be resumed, so a stored round for it must not keep offering Continue on Home.
+  useEffect(() => { if (blocker && loadInProgress(worldId, unitId)) clearInProgress(); }, [blocker, worldId, unitId]);
+
   const live = useRef({ seed, answers, combo, roundXp, active: false });
   useEffect(() => { live.current = { seed, answers, combo, roundXp, active: ready && !blocker && !result && round.length > 0 }; });
   function persist(p: Partial<typeof live.current> = {}) {
@@ -92,7 +95,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     const onHide = () => { if (document.visibilityState === "hidden") persist(); };
     document.addEventListener("visibilitychange", onHide);
     return () => document.removeEventListener("visibilitychange", onHide);
-  });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reads live.current, so one subscription is enough
 
   // The drawer is fixed, so the page reserves its height (--drawer-h) and the options scroll clear of it.
   const mainRef = useRef<HTMLElement>(null);
