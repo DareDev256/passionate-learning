@@ -14,6 +14,7 @@ import { ConfirmSheet } from "./ConfirmSheet";
 import { clearInProgress, loadInProgress, saveInProgress } from "@/lib/roundResume";
 import { blockingUnit } from "@/lib/unlock";
 import { isCleared, levelOf, recallMultiplier, unitKey } from "@/lib/save";
+import { haptic } from "@/lib/native";
 import { playCorrect, playIncorrect, playCelebration, playAchievement } from "@/lib/soundEngine";
 import type { Face, Pose } from "@/content/types";
 
@@ -130,6 +131,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     setAnswers(newAnswers);
     persist({ answers: newAnswers, roundXp: newXp, combo: newCombo });
     if (save.settings.sound) (ok ? playCorrect : playIncorrect)();
+    void haptic(ok ? "success" : "error", save.settings.haptics);
   }
 
   function finish(finalAnswers: Answer[]) {

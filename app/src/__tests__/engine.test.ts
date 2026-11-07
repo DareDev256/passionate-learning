@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { isNative, haptic } from "@/lib/native";
 import { WORLDS, getWorld, cardKey } from "@/content";
 import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
@@ -6,6 +7,56 @@ import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, 
 import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
 import { RESUME_KEY, RESUME_MAX_MS, saveInProgress, loadInProgress, clearInProgress, type InProgress } from "@/lib/roundResume";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
+
+const cap = vi.hoisted(() => ({
+  native: false,
+  impact: vi.fn(),
+  notification: vi.fn(),
+}));
+vi.mock("@capacitor/core", () => ({ Capacitor: { isNativePlatform: () => cap.native } }));
+vi.mock("@capacitor/haptics", () => ({
+  Haptics: { impact: cap.impact, notification: cap.notification },
+  ImpactStyle: { Light: "LIGHT" },
+  NotificationType: { Success: "SUCCESS", Error: "ERROR" },
+}));
+
+describe("native seam", () => {
+  beforeEach(() => { cap.native = false; cap.impact.mockReset(); cap.notification.mockReset(); });
+  it("isNative follows the Capacitor platform", () => {
+    expect(isNative()).toBe(false);
+    cap.native = true;
+    expect(isNative()).toBe(true);
+  });
+  it("never touches the plugin when haptics are off", async () => {
+    cap.native = true;
+    await haptic("success", false);
+    expect(cap.notification).not.toHaveBeenCalled();
+    expect(cap.impact).not.toHaveBeenCalled();
+  });
+  it("resolves without calling the plugin on web", async () => {
+    await expect(haptic("error", true)).resolves.toBeUndefined();
+    expect(cap.notification).not.toHaveBeenCalled();
+    expect(cap.impact).not.toHaveBeenCalled();
+  });
+  it("native error and success use the notification types", async () => {
+    cap.native = true;
+    await haptic("error", true);
+    expect(cap.notification).toHaveBeenCalledWith({ type: "ERROR" });
+    await haptic("success", true);
+    expect(cap.notification).toHaveBeenLastCalledWith({ type: "SUCCESS" });
+  });
+  it("native tap is a light impact", async () => {
+    cap.native = true;
+    await haptic("tap", true);
+    expect(cap.impact).toHaveBeenCalledWith({ style: "LIGHT" });
+    expect(cap.notification).not.toHaveBeenCalled();
+  });
+  it("swallows a rejected plugin call", async () => {
+    cap.native = true;
+    cap.notification.mockRejectedValue(new Error("no taptic engine"));
+    await expect(haptic("success", true)).resolves.toBeUndefined();
+  });
+});
 
 describe("content", () => {
   it("the shipped catalogue is valid", () => {
