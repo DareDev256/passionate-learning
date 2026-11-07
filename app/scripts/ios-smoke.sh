@@ -83,10 +83,19 @@ grep -q "UIKitApplication:$BUNDLE_ID" <<< "$RUNNING" || fail "the app is not run
 
 # iOS renders the launch screen into a snapshot when the app is installed. If it can't (a launch image over
 # SplashBoard's 25 MB decoded limit, for one), it marks the app and shows black at every cold launch.
-LAUNCH_ERR="$(xcrun simctl spawn "$UDID" log show --last "$((SETTLE + 20))s" --style compact --predicate \
+# Fails closed: if the log can't be read, the launch screen is unproven. Only grep's no-match (exit 1) passes.
+LOG_ERR_FILE="$(mktemp)"
+LAUNCH_LOG="$(xcrun simctl spawn "$UDID" log show --last "$((SETTLE + 20))s" --style compact --predicate \
   "subsystem == \"com.apple.SplashBoard\" AND eventMessage CONTAINS \"$BUNDLE_ID\" AND (eventMessage CONTAINS \"Unable to generate launch image\" OR eventMessage CONTAINS \"denylisted\")" \
-  2>/dev/null | grep -v '^Timestamp' || true)"
-[ -z "$LAUNCH_ERR" ] || fail "iOS could not render the launch screen, so launches show black: $(head -1 <<< "$LAUNCH_ERR")"
+  2>"$LOG_ERR_FILE")" || fail "could not read the simulator log to check the launch screen: $(head -1 "$LOG_ERR_FILE")"
+rm -f "$LOG_ERR_FILE"
+GREP_RC=0
+LAUNCH_ERR="$(grep -v -e '^Timestamp' -e '^[[:space:]]*$' <<< "$LAUNCH_LOG")" || GREP_RC=$?
+case "$GREP_RC" in
+  1) ;;
+  0) fail "iOS could not render the launch screen, so launches show black: $(head -1 <<< "$LAUNCH_ERR")" ;;
+  *) fail "could not scan the launch screen log (grep exit $GREP_RC)" ;;
+esac
 
 mkdir -p "$(dirname "$SHOT")"
 if [ -n "${DISPLAY_ID:-}" ]; then

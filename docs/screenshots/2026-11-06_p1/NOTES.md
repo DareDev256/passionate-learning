@@ -47,7 +47,7 @@ The iPhone Duo was captured **closed**, on its cover display (1398 x 2034 px, ab
 - **World path:** the dotted connector runs through the "you are here" label (02, both devices).
 - **404:** the MAP button sits tight under the paragraph (07).
 - **Launch time (P8, measure on hardware):** tap to first paint ranged from about 2 s to 9 s on these simulators (cold WebKit after a reboot or reinstall, on a busy Mac). The screen stays white the whole time.
-- **Asset regeneration (P8):** rerunning `npx @capacitor/assets generate --ios` would restore the 2732 px splash (black launch) and the dark variants. Rerun with a smaller splash and drop the dark variants, or keep the current imageset. The smoke script catches the black launch.
+- **Asset regeneration (handled in the Task 8 fix round):** `npx @capacitor/assets generate --ios` on its own still writes a 2732 px splash and dark variants. Regenerate with `npm run ios:assets` instead, which renders the splash at 2400 and rewrites `Splash.imageset` light only. `npm test` fails on an oversized or dark splash, and the smoke script fails on a black launch.
 
 ## Offline
 

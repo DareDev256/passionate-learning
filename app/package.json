@@ -12,7 +12,8 @@
     "e2e": "playwright test",
     "e2e:build": "npm run build && playwright test",
     "ios:sync": "next build && cap sync ios",
-    "ios:open": "cap open ios"
+    "ios:open": "cap open ios",
+    "ios:assets": "tsx scripts/render-assets.tsx"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",
