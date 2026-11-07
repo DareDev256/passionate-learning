@@ -54,3 +54,33 @@ test("quit with no answers leaves at once, and Leave drops the saved round", asy
   await page.waitForURL(/\/w\/prompt\//);
   expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
 });
+
+test("focus stays on Leave while the timer re-renders under the open sheet", async ({ page }) => {
+  await firstOpenRound(page);
+  await answerFirstCard(page); await next(page);
+  await expect(page.locator(".drawer")).toHaveCount(0); // card 2 is waiting for an answer
+  await page.getByRole("button", { name: "Quit round" }).click();
+  await expect(page.getByRole("button", { name: "Keep playing" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Leave", exact: true })).toBeFocused();
+  await page.waitForTimeout(800);
+  await expect(page.getByRole("button", { name: "Leave", exact: true })).toBeFocused();
+});
+
+test("a round answered to the last card survives a reload and is applied, not thrown away", async ({ page }) => {
+  await firstOpenRound(page);
+  for (let i = 0; i < 20; i++) {
+    await answerFirstCard(page);
+    if (await page.getByRole("button", { name: "FINISH ROUND" }).count()) break;
+    await next(page);
+  }
+  await expect(page.getByRole("button", { name: "FINISH ROUND" })).toBeVisible();
+  await page.evaluate(() => Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true }));
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).not.toBeNull();
+  await page.reload();
+  await expect(page.locator(".recap")).toBeVisible();
+  const save = await page.evaluate(() => Object.entries(localStorage).filter(([k]) => k !== "passionate-learning:round").map(([, v]) => v).join(""));
+  expect(save).toMatch(/"xp":\s*[1-9]/);
+  expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
+});

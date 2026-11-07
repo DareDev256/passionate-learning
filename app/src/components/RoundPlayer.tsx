@@ -58,15 +58,22 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   }, []);
   useEffect(() => { if (ready && !done && !result) askStart.current = performance.now(); }, [ready, idx, done, result]);
 
-  // A stored round that no longer matches the rebuilt one (content changed, or it was already fully answered) starts fresh.
+  // A stored round that no longer matches the rebuilt one (content changed, or it is longer than the round) starts fresh.
+  // One that was answered to the last card but never finished is applied now, through the same finish() as a normal round.
+  const applied = useRef(false);
   useEffect(() => {
-    if (!stored || !ready || blocker || !round.length) return;
-    const stale = stored.answers.length >= round.length || stored.answers.some((a, i) => a.key !== round[i].key);
-    if (stale && seed === stored.seed && answers === stored.answers) {
-      /* eslint-disable react-hooks/set-state-in-effect */
+    if (!stored || !ready || blocker || !round.length || result || applied.current) return;
+    if (seed !== stored.seed || answers !== stored.answers) return;
+    const mismatch = stored.answers.some((a, i) => !round[i] || a.key !== round[i].key);
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!mismatch && stored.answers.length === round.length) {
+      applied.current = true;
+      setIdx(round.length - 1);
+      finish(stored.answers);
+    } else if (mismatch || stored.answers.length > round.length) {
       clearInProgress(); spent.current = 0; setSeed(Date.now()); setIdx(0); setAnswers([]); setCombo(0); setRoundXp(0);
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [stored, ready, blocker, round]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Latest values for the backgrounding listener, which must not re-subscribe on every render.
@@ -104,13 +111,17 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     if (save.settings.sound) (ok ? playCorrect : playIncorrect)();
   }
 
-  function next() {
-    if (idx + 1 < round.length) { setIdx(idx + 1); setDone(null); return; }
-    const res = applyRound(save, world, unit, answers, new Date(), spent.current / 1000);
+  function finish(finalAnswers: Answer[]) {
+    const res = applyRound(save, world, unit, finalAnswers, new Date(), spent.current / 1000);
     update(res.save);
     clearInProgress();
     setResult(res);
     if (save.settings.sound) (res.rankAfter !== res.rankBefore ? playAchievement : playCelebration)();
+  }
+
+  function next() {
+    if (idx + 1 < round.length) { setIdx(idx + 1); setDone(null); return; }
+    finish(answers);
   }
 
   useEffect(() => {
