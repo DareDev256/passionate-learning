@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0 (2026-11-06): the iOS app
+
+Passionate Learning now runs as a native iPhone app (Capacitor 8) that works fully offline. Bundle ID `ca.stiersolutions.passionatelearning`.
+- The web build is wrapped in a Capacitor iOS project that serves the static export from the app bundle, so every world plays with no connection.
+- A native seam gives answers a light haptic on iPhone and does nothing in the browser.
+- Settings, privacy and support pages are in the app, and a locked unit says which unit to finish first.
+- A round survives the app being backgrounded, and quitting a round asks first. A round answered to the last card is applied when you come back.
+- Home offers to continue a round that iOS closed.
+- Launch is white in both light and Dark Mode, and content sits clear of the status bar.
+- The drawer never covers the answer options at 669 px tall, and nothing scrolls sideways at 430 px wide. The 404 page is branded.
+- A simulator smoke test (`scripts/ios-smoke.sh`) boots iPhone 18 Pro and iPhone Duo, installs the app, checks it stays up and saves screenshots.
+- `npm run ios:assets` regenerates the icon and splash images without bringing back the black launch screen.
+- `scripts/testflight.sh` archives, signs and uploads to TestFlight, and refuses with exit 3 until the App Store Connect app record exists.
+- Security: Next.js upgraded to 16.4.5.
+- Three bugs only the iPhone simulator showed are fixed: opening a deep link showed Home instead of that page, a 3 second black launch came from an over-limit splash image, and content sat under the status bar.
+- Lint is green: vendored Phaser and generated iOS folders are ignored, and the round builder no longer needs a complex dependency expression.
+
 ## 2026-10-03: Passionate Learning becomes one app (app v1.0 → v1.1)
 
 The separate suite sites merge into one installable app at https://passionate-learning.vercel.app (`app/`).

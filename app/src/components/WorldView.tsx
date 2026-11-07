@@ -28,7 +28,7 @@ export function WorldView({ worldId }: { worldId: string }) {
   const style = { ["--wa" as string]: w.accent } as React.CSSProperties;
   const xs = [50, 74, 50, 26, 50, 74, 50]; // percent across, a gentle S
   const STEP = 150;
-  const states = w.units.map((u, i) => {
+  const states = w.units.map((u) => {
     const p = save.units[unitKey(w.id, u.id)];
     const open = isUnitOpen(w, u.id, save);
     return { u, p, open, cleared: isCleared(p), mastered: isMastered(p) };

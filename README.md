@@ -55,7 +55,24 @@ npm run validate     # checks every card in the catalogue
 npm run build        # static export to app/out
 ```
 
-Stack: Next.js 16 (static export) · React 19 · TypeScript · Tailwind v4 · ts-fsrs · Vitest. The app works offline (service worker) and installs as a PWA; an iOS/Android wrapper (Capacitor) is next.
+Stack: Next.js 16 (static export) · React 19 · TypeScript · Tailwind v4 · ts-fsrs · Vitest. The app works offline (service worker) and installs as a PWA; the iOS app wraps the same build (see below); Android is next.
+
+## iOS app
+
+The same static export runs as a native iPhone app (Capacitor 8, bundle ID `ca.stiersolutions.passionatelearning`, works offline). The Xcode project is `app/ios/App`.
+
+```bash
+cd app
+npm run ios:sync     # next build, then cap sync ios (copies app/out into the app bundle)
+npm run ios:open     # open the project in Xcode
+npm run ios:assets   # regenerate the icon and splash images from source
+```
+
+Use `npm run ios:assets` instead of a bare `capacitor-assets` run: it renders the splash at sizes iOS accepts and rewrites the splash imageset afterwards, so a plain `capacitor-assets generate` can bring back the 3 second black launch.
+
+**Run it in the simulator.** `scripts/ios-smoke.sh "iPhone 18 Pro"` (or `"iPhone Duo"`) boots the simulator headless, builds, installs, launches, checks the app is still running and saves a screenshot to `docs/screenshots/`. It exits non-zero on any failure.
+
+**Upload to TestFlight.** `scripts/testflight.sh` archives with automatic signing (the paid team Xcode is signed in with), exports with `ios/ExportOptions.plist` and uploads using the App Store Connect API key in `~/.secrets` (`asc-api-key.p8`, `asc-api-key-id`, `asc-api-issuer-id`). It checks first that the app record exists. Exit code 3 means it does not: the API cannot create app records, so the owner signs in to appstoreconnect.apple.com once and the record is created, then the script is run again. `scripts/testflight.sh --check-only` runs just that check. Run from `app/`.
 
 ## Repo map
 

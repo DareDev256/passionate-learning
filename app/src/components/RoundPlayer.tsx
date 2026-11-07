@@ -40,7 +40,9 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const [stored] = useState(() => (typeof window === "undefined" ? null : loadInProgress(worldId, unitId)));
   const [seed, setSeed] = useState(() => stored?.seed ?? Date.now());
   const blocker = ready ? blockingUnit(world, unitId, save) : null;
-  const round = useMemo(() => (ready && !blocker ? buildRound(world, unit, save, seed) : []), [ready, !!blocker, seed]); // eslint-disable-line react-hooks/exhaustive-deps
+  const blocked = !!blocker;
+  // Built once per (ready, blocked, seed): a save update mid-round (XP, recall) must not reshuffle the cards.
+  const round = useMemo(() => (ready && !blocked ? buildRound(world, unit, save, seed) : []), [ready, blocked, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   // Restore to the next unanswered card: an answered card whose NEXT was never pressed would otherwise count twice.
   const [idx, setIdx] = useState(stored?.answers.length ?? 0);
   const [answers, setAnswers] = useState<Answer[]>(stored?.answers ?? []);

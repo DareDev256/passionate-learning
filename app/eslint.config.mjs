@@ -10,6 +10,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "public/arcade/pop/vendor/**",
+    "ios/App/App/public/**",
+    "ios/**/build/**",
+    "ios/DerivedData/**",
   ]),
 ]);
 
