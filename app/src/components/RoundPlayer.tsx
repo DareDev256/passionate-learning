@@ -91,6 +91,27 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     return () => document.removeEventListener("visibilitychange", onHide);
   });
 
+  // The drawer is fixed, so the page reserves its height (--drawer-h) and the options scroll clear of it.
+  const mainRef = useRef<HTMLElement>(null);
+  const drawerUp = !!done;
+  useEffect(() => {
+    const main = mainRef.current;
+    const drawer = main?.querySelector<HTMLElement>(".drawer");
+    if (!main) return;
+    if (!drawer) { main.style.removeProperty("--drawer-h"); return; }
+    const set = () => main.style.setProperty("--drawer-h", `${drawer.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(drawer);
+    const reduce = document.documentElement.classList.contains("reduce-motion") || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const opts = main.querySelectorAll<HTMLElement>(".options .opt, .opt-row .opt, [aria-label='Sentences'] .sentence");
+    const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+    opts[opts.length - 1]?.scrollIntoView({ block: "nearest", behavior });
+    const chosen = main.querySelector<HTMLElement>(".opt.right, .opt.wrong, .sentence.right, .sentence.wrong");
+    if (chosen && chosen.getBoundingClientRect().top < 0) chosen.scrollIntoView({ block: "nearest", behavior });
+    return () => ro.disconnect();
+  }, [drawerUp, idx, ready, !!blocker, !!result]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function leave() { clearInProgress(); router.push(`/w/${world.id}/`); }
 
   const rc = round[idx];
@@ -139,7 +160,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const react: { pose: Pose; face: Face } = !done ? { pose: "think", face: "happy" } : done.ok ? { pose: combo >= 3 ? "cheer" : "point", face: combo >= 3 ? "cool" : "grin" } : { pose: h % 2 ? "facepalm" : "shrug", face: h % 2 ? "spiral" : "shock" };
 
   return (
-    <main className="round" style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
+    <main className="round" ref={mainRef} style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
       <div className="round-top">
         <button type="button" className="x" aria-label="Quit round" onClick={() => (answers.length ? setConfirming(true) : leave())}>✕</button>
         <div className="segs" aria-label={`Card ${idx + 1} of ${round.length}`}>
