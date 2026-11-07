@@ -20,7 +20,7 @@ export default defineConfig({
   webServer: {
     command: "node e2e/serve.mjs",
     url: "http://localhost:4173",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
   use: {
     baseURL: "http://localhost:4173",

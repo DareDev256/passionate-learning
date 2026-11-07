@@ -55,7 +55,7 @@ npm run validate     # checks every card in the catalogue
 npm run build        # static export to app/out
 ```
 
-Stack: Next.js 16 (static export) · React 19 · TypeScript · Tailwind v4 · ts-fsrs · Vitest. The app works offline (service worker) and installs as a PWA; the iOS app wraps the same build (see below); Android is next.
+Stack: Next.js 16 (static export) · React 19 · TypeScript · Tailwind v4 · ts-fsrs · Vitest. The app works offline (service worker) and installs as a PWA; the iOS app wraps the same build (see below).
 
 ## iOS app
 

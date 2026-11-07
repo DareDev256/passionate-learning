@@ -70,6 +70,21 @@ if [ "${SKIP_BUILD:-0}" != "1" ]; then
 fi
 [ -d "$APP_PATH" ] || fail "no build at $APP_PATH (run without SKIP_BUILD=1)"
 
+# Regression check: the iOS wrapper serves the static export through StaticExportRouter (wired up by the
+# SceneDelegate). If a revert drops either, the build still launches, so assert the symbol is in the app's code.
+# Debug builds keep the app's code in App.debug.dylib beside the thin executable, so scan the executable and
+# every dylib at the top of the bundle.
+APP_BIN="$APP_PATH/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist" 2>/dev/null || echo App)"
+[ -f "$APP_BIN" ] || fail "no app executable at $APP_BIN"
+FOUND_ROUTER=0
+for BIN in "$APP_BIN" "$APP_PATH"/*.dylib; do
+  [ -f "$BIN" ] || continue
+  STRINGS="$(strings -a "$BIN")" || fail "could not read symbols from $BIN"
+  if grep -q "StaticExportRouter" <<< "$STRINGS"; then FOUND_ROUTER=1; break; fi
+done
+[ "$FOUND_ROUTER" = 1 ] || fail "StaticExportRouter is missing from the app binary (router or SceneDelegate wiring reverted?)"
+say "ok: StaticExportRouter is in the app binary"
+
 xcrun simctl install "$UDID" "$APP_PATH" || fail "install failed"
 if [ -n "${APPEARANCE:-}" ]; then xcrun simctl ui "$UDID" appearance "$APPEARANCE" || fail "could not set appearance"; fi
 

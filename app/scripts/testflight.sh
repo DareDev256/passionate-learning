@@ -69,12 +69,12 @@ xcodebuild archive -project "$APP_DIR/ios/App/App.xcodeproj" -scheme App -config
   -destination "generic/platform=iOS" -archivePath "$ARCHIVE" \
   DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD" \
   -allowProvisioningUpdates "${AUTH[@]}" >"$OUT/archive.log" 2>&1 \
-  || { tail -30 "$OUT/archive.log" >&2; fail "archive failed (full log: $OUT/archive.log)"; }
+  || { grep -v -- '-authenticationKey' "$OUT/archive.log" | tail -30 >&2; fail "archive failed (full log: $OUT/archive.log)"; }
 
 # 4. Export with destination upload: this sends the build to App Store Connect.
 say "exporting and uploading"
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$EXPORT_PLIST" -exportPath "$OUT/export" \
   -allowProvisioningUpdates "${AUTH[@]}" >"$OUT/export.log" 2>&1 \
-  || { tail -30 "$OUT/export.log" >&2; fail "export/upload failed (full log: $OUT/export.log)"; }
+  || { grep -v -- '-authenticationKey' "$OUT/export.log" | tail -30 >&2; fail "export/upload failed (full log: $OUT/export.log)"; }
 
 say "uploaded build $BUILD of $BUNDLE_ID; it appears in TestFlight after Apple finishes processing it"

@@ -19,6 +19,11 @@ export function saveInProgress(p: InProgress): void {
   try { localStorage.setItem(RESUME_KEY, JSON.stringify(p)); } catch { /* storage full or blocked: resuming is a nicety */ }
 }
 
+const validAnswer = (a: unknown): boolean => {
+  const x = a as Partial<Answer> | null;
+  return !!x && typeof x === "object" && typeof x.key === "string" && typeof x.correct === "boolean" && typeof x.review === "boolean";
+};
+
 /** The stored round for any unit (Home offers to continue it), or null when missing, corrupt or older than RESUME_MAX_MS. */
 export function peekInProgress(now = Date.now()): InProgress | null {
   try {
@@ -26,7 +31,8 @@ export function peekInProgress(now = Date.now()): InProgress | null {
     if (!raw) return null;
     const p = JSON.parse(raw) as InProgress;
     if (!p || typeof p.world !== "string" || typeof p.unit !== "string") return null;
-    if (!Array.isArray(p.answers) || typeof p.seed !== "number" || typeof p.savedAt !== "number") return null;
+    if (!Array.isArray(p.answers) || !p.answers.every(validAnswer)) return null;
+    if (![p.seed, p.savedAt, p.idx, p.spentMs, p.roundXp, p.combo].every(Number.isFinite)) return null;
     if (now - p.savedAt > RESUME_MAX_MS) return null;
     return p;
   } catch {

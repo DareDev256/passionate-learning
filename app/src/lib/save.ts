@@ -32,7 +32,7 @@ export interface Settings { sound: boolean; haptics: boolean; motion: MotionPref
 export interface Save {
   v: 1;
   xp: number;
-  /** ISO dates (YYYY-MM-DD) on which at least one round was finished. Never reset. */
+  /** ISO dates (YYYY-MM-DD) on which at least one round was finished. Never resets on a missed day; only the player's own Reset progress clears it. */
   days: string[];
   cards: Record<string, CardMemory>;
   units: Record<string, UnitProgress>;
