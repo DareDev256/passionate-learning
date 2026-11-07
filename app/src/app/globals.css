@@ -162,7 +162,7 @@ a { color: inherit; }
 .badge.cleared { background: var(--ink); color: var(--paper); }
 
 /* ---------- round ---------- */
-.round { max-width: 640px; margin: 0 auto; padding: 12px 16px calc(var(--drawer-h, 0px) + 16px); min-height: 100dvh; overflow-x: clip; }
+.round { max-width: 640px; margin: 0 auto; padding: 12px 16px calc(var(--drawer-h, 0px) + 16px); min-height: 100dvh; }
 .round-top { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; margin-bottom: 18px; }
 .x { width: 40px; height: 40px; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); font: 400 18px var(--display); display: grid; place-items: center; text-decoration: none; cursor: pointer; }
 .segs { display: flex; gap: 5px; }
@@ -218,9 +218,9 @@ a { color: inherit; }
 .flame { display: inline-block; animation: flame 0.6s ease-in-out infinite alternate; }
 @keyframes flame { from { transform: rotate(-6deg) scale(1); } to { transform: rotate(6deg) scale(1.12); } }
 .opt.right, .sentence.right { animation: pop 0.38s cubic-bezier(.3,1.7,.5,1); position: relative; }
-.opt.right::after, .sentence.right::after { content: ""; position: absolute; inset: -4px; border-radius: 16px; border: 3px solid var(--good); animation: ring-out 0.6s ease-out forwards; pointer-events: none; }
+.opt.right::after, .sentence.right::after { content: ""; position: absolute; inset: -4px; border-radius: 16px; border: 3px solid var(--good); opacity: 0; animation: ring-out 0.6s ease-out; pointer-events: none; }
 @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.05); } 100% { transform: scale(1); } }
-@keyframes ring-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.08); } }
+@keyframes ring-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.03); } }
 .recap-hero { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
 .acc-ring { width: 118px; height: 118px; margin-bottom: 8px; }
 .ring-fill { animation: ring-draw 1s cubic-bezier(.2,.8,.2,1); }

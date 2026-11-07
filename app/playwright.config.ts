@@ -16,6 +16,7 @@ function executablePath(): string | undefined {
 export default defineConfig({
   testDir: "./e2e",
   testMatch: /.*\.spec\.ts/,
+  workers: 2,
   webServer: {
     command: "node e2e/serve.mjs",
     url: "http://localhost:4173",
