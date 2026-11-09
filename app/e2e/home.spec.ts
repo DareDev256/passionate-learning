@@ -55,6 +55,24 @@ test("three quests and a chest: a round ticks two, a second round opens the ches
     if (round === 0) await expect(quests.locator("li.done")).toHaveCount(2); // round + review (nothing was due)
   }
   await expect(quests.locator("li.done")).toHaveCount(3);
+  // The label must be readable, not just present: a role-name click passed while the text was dark on dark (2026-11-09).
+  const chestBtn = page.getByRole("button", { name: "OPEN CHEST" });
+  await expect(chestBtn).toBeEnabled();
+  const ratio = await chestBtn.evaluate((el) => {
+    const rgb = (s: string) => (s.match(/[\d.]+/g) || ["0", "0", "0"]).slice(0, 3).map(Number);
+    const lum = ([r, g, b]: number[]) => {
+      const f = (c: number) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const cs = getComputedStyle(el);
+    const [a, b] = [lum(rgb(cs.color)), lum(rgb(cs.backgroundColor))].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  });
+  expect(ratio).toBeGreaterThanOrEqual(4.5);
+  if (page.viewportSize()?.width === 390) {
+    await page.waitForTimeout(500); // let the System window finish its open animation
+    await page.screenshot({ path: "docs/screenshots/2026-11-09_p2/08-home-chest-ready-390.png", fullPage: true });
+  }
   const tokensBefore = (await readSave(page)).tokens;
   await page.getByRole("button", { name: "OPEN CHEST" }).click();
   await expect(page.getByText("Chest opened.")).toBeVisible();
