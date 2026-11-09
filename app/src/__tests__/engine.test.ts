@@ -3,7 +3,7 @@ import { isNative, haptic } from "@/lib/native";
 import { WORLDS, getWorld, cardKey } from "@/content";
 import { validateWorlds } from "@/content/validate";
 import type { World } from "@/content/types";
-import { freshSave, sanitize, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest, motionClass } from "@/lib/save";
+import { freshSave, migrate, rankOf, recallMultiplier, reviewCard, isMastered, isCleared, dueKeys, rollQuest, motionClass } from "@/lib/save";
 import { isUnitOpen, blockingUnit, unitIndex } from "@/lib/unlock";
 import { RESUME_KEY, RESUME_MAX_MS, saveInProgress, loadInProgress, peekInProgress, clearInProgress, type InProgress } from "@/lib/roundResume";
 import { buildRound, grade, applyRound, shuffle } from "@/lib/round";
@@ -84,15 +84,15 @@ describe("content", () => {
 
 describe("settings", () => {
   it("fills missing settings with defaults", () => {
-    expect(sanitize({ v: 1, settings: { sound: false } }).settings).toEqual({ sound: false, haptics: true, motion: "system", name: "" });
+    expect(migrate({ v: 1, settings: { sound: false } }).settings).toEqual({ sound: false, haptics: true, motion: "system", name: "" });
   });
   it("rejects malformed haptics and motion", () => {
-    const st = sanitize({ v: 1, settings: { haptics: "yes", motion: "wild" } }).settings;
+    const st = migrate({ v: 1, settings: { haptics: "yes", motion: "wild" } }).settings;
     expect(st.haptics).toBe(true);
     expect(st.motion).toBe("system");
   });
   it("keeps valid values and a fresh save is system motion", () => {
-    expect(sanitize({ v: 1, settings: { haptics: false, motion: "reduce" } }).settings).toMatchObject({ haptics: false, motion: "reduce" });
+    expect(migrate({ v: 1, settings: { haptics: false, motion: "reduce" } }).settings).toMatchObject({ haptics: false, motion: "reduce" });
     expect(freshSave().settings.motion).toBe("system");
     expect(motionClass("reduce")).toBe("reduce-motion");
     expect(motionClass("full")).toBe("");
@@ -125,11 +125,11 @@ describe("grading", () => {
 });
 
 describe("save", () => {
-  it("sanitize turns garbage into a fresh save", () => {
-    expect(sanitize(null)).toEqual(freshSave());
-    expect(sanitize({ v: 1, xp: -50, days: ["nope", "2026-10-03"], tokens: "x" }).xp).toBe(0);
-    expect(sanitize({ v: 1, days: ["nope", "2026-10-03", "2026-10-03"] }).days).toEqual(["2026-10-03"]);
-    expect(sanitize({ v: 1, cards: { "__proto__:x": { due: "z" } } }).cards).toEqual({});
+  it("migrate turns garbage into a fresh save", () => {
+    expect(migrate(null)).toEqual(freshSave());
+    expect(migrate({ v: 1, xp: -50, days: ["nope", "2026-10-03"], tokens: "x" }).xp).toBe(0);
+    expect(migrate({ v: 1, days: ["nope", "2026-10-03", "2026-10-03"] }).days).toEqual(["2026-10-03"]);
+    expect(migrate({ v: 1, cards: { "__proto__:x": { due: "z" } } }).cards).toEqual({});
   });
   it("ranks climb E to S", () => {
     expect(rankOf(0).rank).toBe("E");
@@ -151,8 +151,8 @@ describe("save", () => {
     expect(isCleared({ last: [0.7], best: 0.7, rounds: 1 })).toBe(true);
   });
   it("a new day rolls a new daily quest", () => {
-    const s = { ...freshSave(), quest: { date: "2026-10-01", round: true, review: true, perfect: true } };
-    expect(rollQuest(s, new Date("2026-10-03T15:00:00")).quest.round).toBe(false);
+    const s = { ...freshSave(), quests: { date: "2026-10-01", rounds: 2, reviewed: true, chest: true } };
+    expect(rollQuest(s, new Date("2026-10-03T15:00:00")).quests).toEqual({ date: "2026-10-03", rounds: 0, reviewed: false, chest: false });
   });
 });
 
@@ -181,7 +181,7 @@ describe("rounds", () => {
     expect(r.xpGained).toBe(answers.length * 10 + 20);
     expect(r.save.days).toEqual(["2026-10-03"]);
     expect(r.tokensGained).toBe(2);
-    expect(r.questDone).toEqual({ round: true, review: false, perfect: true });
+    expect(r.questDone).toEqual({ round: true, review: true, second: false }); // nothing was due, so the review quest is waived
     expect(r.firstOfDay).toBe(true);
   });
   it("speed bonus: under 60s with half right pays 15 XP; slow or sloppy pays nothing extra", () => {

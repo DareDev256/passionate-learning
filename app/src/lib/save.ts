@@ -1,8 +1,11 @@
-// One save for the whole app: XP, rank, days played, per-card memory (FSRS), unit progress, daily quest, arcade tokens.
+// One save for the whole app: XP, rank, days played, per-card memory (FSRS), unit progress, daily quests, arcade tokens, an event log.
 // localStorage, versioned, defensive: a corrupt save becomes a fresh one instead of a crash.
-import { FSRS, Rating, createEmptyCard, type Card as FCard, type Grade } from "ts-fsrs";
+import { FSRS, Rating, StrategyMode, createEmptyCard, type Card as FCard, type Grade } from "ts-fsrs";
 
-export const SAVE_KEY = "passionate-learning:v1";
+export const SAVE_KEY = "passionate-learning:v2";
+/** The v1 save's key. Read once to upgrade, then removed; the payload lives on as BACKUP_KEY. */
+export const LEGACY_KEY = "passionate-learning:v1";
+export const BACKUP_KEY = "passionate-learning:v1-backup";
 
 export interface CardMemory {
   /** FSRS card state, dates as ISO strings. */
@@ -29,46 +32,146 @@ export interface UnitProgress {
 export type MotionPref = "system" | "reduce" | "full";
 export interface Settings { sound: boolean; haptics: boolean; motion: MotionPref; name: string }
 
+/** What brought the player here: picks their first world and the order of their path. */
+export type Goal = "work" | "curious" | "protect" | "build";
+export const GOAL_IDS: readonly Goal[] = ["work", "curious", "protect", "build"];
+
+/**
+ * One thing the player did, appended and never edited. Server state in P3 is a fold over these and a merge is a union by `id`.
+ * `cards` and `correct` line up by index.
+ */
+export interface SaveEvent {
+  id: string;
+  type: "round" | "fix";
+  /** "world/unit" for a round; the unit the missed cards came from for a fix. */
+  unit: string;
+  cards: string[];
+  correct: boolean[];
+  durationMs: number;
+  /** The device clock when it happened. The server will use its own receipt time for anything that counts. */
+  clientTs: number;
+}
+
+/** XP carried over from a v1 save. Kept in full locally; a server credits at most `cap` and never to leagues. */
+export interface Imported { xp: number; cap: number; unverified: true }
+
+/** Today's quests. The chest opens once all three are done. */
+export interface Quests { date: string; rounds: number; reviewed: boolean; chest: boolean }
+
 export interface Save {
-  v: 1;
+  v: 2;
   xp: number;
   /** ISO dates (YYYY-MM-DD) on which at least one round was finished. Never resets on a missed day; only the player's own Reset progress clears it. */
   days: string[];
   cards: Record<string, CardMemory>;
   units: Record<string, UnitProgress>;
-  quest: { date: string; round: boolean; review: boolean; perfect: boolean };
+  quests: Quests;
   tokens: number;
   settings: Settings;
+  profile: { goal: Goal | null; onboarded: boolean };
+  /** Append-only log of rounds and fix passes. */
+  events: SaveEvent[];
+  /** How many of `events`, from the start, a server has already received. 0 until accounts exist. */
+  flushed: number;
+  imported: Imported | null;
 }
 
 export const today = (d = new Date()) => d.toLocaleDateString("en-CA");
 
+export const freshQuests = (now = new Date()): Quests => ({ date: today(now), rounds: 0, reviewed: false, chest: false });
+
 export function freshSave(): Save {
-  return { v: 1, xp: 0, days: [], cards: {}, units: {}, quest: { date: today(), round: false, review: false, perfect: false }, tokens: 0, settings: { sound: true, haptics: true, motion: "system", name: "" } };
+  return {
+    v: 2, xp: 0, days: [], cards: {}, units: {}, quests: freshQuests(), tokens: 0,
+    settings: { sound: true, haptics: true, motion: "system", name: "" },
+    profile: { goal: null, onboarded: false }, events: [], flushed: 0, imported: null,
+  };
 }
 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
+const isNum = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 
-/** Accepts anything; returns a valid Save. Unknown or malformed fields fall back to defaults. */
-export function sanitize(raw: unknown): Save {
+/** The most XP one answered card can pay (a correct recall after 30+ days is 3x the base 10). */
+export const MAX_XP_PER_CARD = 30;
+/** The most one round adds on top of its cards: the perfect bonus (20) and the speed bonus (15). */
+export const MAX_XP_PER_ROUND = 35;
+
+/** What a server may credit from XP that came from a v1 save: what the save's own card and round counts could have paid. */
+export function importCap(s: Pick<Save, "cards" | "units">): number {
+  const seen = Object.values(s.cards).reduce((n, m) => n + (isNum(m.seen) ? m.seen : 0), 0);
+  const rounds = Object.values(s.units).reduce((n, u) => n + u.rounds, 0);
+  return seen * MAX_XP_PER_CARD + rounds * MAX_XP_PER_ROUND;
+}
+
+function sanitizeEvents(raw: unknown): SaveEvent[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SaveEvent[] = [];
+  for (const e of raw) {
+    if (!isObj(e) || typeof e.id !== "string" || (e.type !== "round" && e.type !== "fix") || typeof e.unit !== "string") continue;
+    if (!Array.isArray(e.cards) || !Array.isArray(e.correct) || e.cards.length !== e.correct.length) continue;
+    if (!e.cards.every((c) => typeof c === "string") || !e.correct.every((c) => typeof c === "boolean")) continue;
+    if (!isNum(e.durationMs) || e.durationMs < 0 || !isNum(e.clientTs)) continue;
+    out.push({ id: e.id, type: e.type, unit: e.unit, cards: e.cards as string[], correct: e.correct as boolean[], durationMs: e.durationMs, clientTs: e.clientTs });
+  }
+  return out;
+}
+
+/**
+ * Accepts anything; returns a valid v2 Save. A v1 save is upgraded (nothing it holds is dropped); a v2 save is cleaned;
+ * anything else becomes a fresh save. Unknown or malformed fields fall back to defaults.
+ */
+export function migrate(raw: unknown): Save {
   const s = freshSave();
-  if (!isObj(raw) || raw.v !== 1) return s;
-  if (typeof raw.xp === "number" && Number.isFinite(raw.xp) && raw.xp >= 0) s.xp = Math.floor(raw.xp);
+  if (!isObj(raw) || (raw.v !== 1 && raw.v !== 2)) return s;
+  if (isNum(raw.xp) && raw.xp >= 0) s.xp = Math.floor(raw.xp);
   if (Array.isArray(raw.days)) s.days = [...new Set(raw.days.filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort();
   if (isObj(raw.cards)) for (const [k, v] of Object.entries(raw.cards)) if (/^[a-z0-9-]+:[a-z0-9-]+$/.test(k) && isObj(v) && typeof v.due === "string") s.cards[k] = v as unknown as CardMemory;
   if (isObj(raw.units)) for (const [k, v] of Object.entries(raw.units)) if (isObj(v) && Array.isArray(v.last)) s.units[k] = { last: (v.last as unknown[]).filter((n): n is number => typeof n === "number").slice(-3), best: Number(v.best) || 0, rounds: Number(v.rounds) || 0 };
-  if (isObj(raw.quest) && typeof raw.quest.date === "string") s.quest = { date: raw.quest.date, round: !!raw.quest.round, review: !!raw.quest.review, perfect: !!raw.quest.perfect };
-  if (typeof raw.tokens === "number" && raw.tokens >= 0) s.tokens = Math.floor(raw.tokens);
+  if (isNum(raw.tokens) && raw.tokens >= 0) s.tokens = Math.floor(raw.tokens);
   if (isObj(raw.settings)) s.settings = { sound: raw.settings.sound !== false, haptics: raw.settings.haptics !== false, motion: raw.settings.motion === "reduce" || raw.settings.motion === "full" ? raw.settings.motion : "system", name: typeof raw.settings.name === "string" ? raw.settings.name.slice(0, 24) : "" };
+
+  if (raw.v === 2) {
+    if (isObj(raw.quests) && typeof raw.quests.date === "string") s.quests = { date: raw.quests.date, rounds: isNum(raw.quests.rounds) && raw.quests.rounds >= 0 ? Math.floor(raw.quests.rounds) : 0, reviewed: !!raw.quests.reviewed, chest: !!raw.quests.chest };
+    if (isObj(raw.profile)) s.profile = { goal: GOAL_IDS.includes(raw.profile.goal as Goal) ? (raw.profile.goal as Goal) : null, onboarded: !!raw.profile.onboarded };
+    s.events = sanitizeEvents(raw.events);
+    s.flushed = isNum(raw.flushed) ? Math.min(s.events.length, Math.max(0, Math.floor(raw.flushed))) : 0;
+    if (isObj(raw.imported) && isNum(raw.imported.xp) && isNum(raw.imported.cap)) s.imported = { xp: Math.max(0, Math.floor(raw.imported.xp)), cap: Math.max(0, Math.floor(raw.imported.cap)), unverified: true };
+    return s;
+  }
+
+  // v1 -> v2. The old daily quest carries over for today only; its "perfect" tick has no v2 quest and is dropped.
+  if (isObj(raw.quest) && typeof raw.quest.date === "string" && raw.quest.date === s.quests.date) s.quests = { date: raw.quest.date, rounds: raw.quest.round ? 1 : 0, reviewed: !!raw.quest.review, chest: false };
+  const played = s.xp > 0 || s.days.length > 0 || Object.keys(s.units).length > 0 || Object.keys(s.cards).length > 0;
+  s.profile = { goal: null, onboarded: played };
+  if (s.xp > 0) s.imported = { xp: s.xp, cap: importCap(s), unverified: true };
   return s;
 }
 
 /** The class the `<html>` element carries for a motion preference. */
 export const motionClass = (m: MotionPref): "" | "reduce-motion" => (m === "reduce" ? "reduce-motion" : "");
 
-export function loadSave(): Save {
+/** The v2 save, or a v1 save upgraded once. A valid v2 save is never replaced by an older one. */
+export function loadSave(now = new Date()): Save {
   if (typeof window === "undefined") return freshSave();
-  try { return rollQuest(sanitize(JSON.parse(localStorage.getItem(SAVE_KEY) || "null"))); } catch { return freshSave(); }
+  try {
+    const rawV2 = localStorage.getItem(SAVE_KEY);
+    if (rawV2) {
+      try {
+        const parsed: unknown = JSON.parse(rawV2);
+        if (isObj(parsed) && parsed.v === 2) return rollQuest(migrate(parsed), now);
+      } catch { /* a corrupt v2 falls through to the v1 backup, if there is one */ }
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    const source = legacy ?? localStorage.getItem(BACKUP_KEY);
+    if (!source) return freshSave();
+    const upgraded = migrate(JSON.parse(source));
+    const json = JSON.stringify(upgraded);
+    try {
+      localStorage.setItem(SAVE_KEY, json);
+      if (localStorage.getItem(SAVE_KEY) === json && legacy !== null) { localStorage.setItem(BACKUP_KEY, legacy); localStorage.removeItem(LEGACY_KEY); }
+    } catch { /* full or blocked: play on, and the v1 data is still there for the next try */ }
+    return rollQuest(upgraded, now);
+  } catch { return freshSave(); }
 }
 
 export function writeSave(s: Save): void {
@@ -76,9 +179,14 @@ export function writeSave(s: Save): void {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* private mode or full: play on without saving */ }
 }
 
-/** A new day gets a new daily quest. */
+/** Removes the v1 backup (and any v1 key). Reset progress calls this so a reset really is one: the backup must not bring the old save back. */
+export function forgetLegacy(): void {
+  try { localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(LEGACY_KEY); } catch { /* nothing to forget if storage is blocked */ }
+}
+
+/** A new day gets new quests. */
 export function rollQuest(s: Save, now = new Date()): Save {
-  return s.quest.date === today(now) ? s : { ...s, quest: { date: today(now), round: false, review: false, perfect: false } };
+  return s.quests.date === today(now) ? s : { ...s, quests: freshQuests(now) };
 }
 
 // ── Ranks: E to S, from total XP ─────────────────────────────────────────────────────────────────
@@ -95,7 +203,10 @@ export function rankOf(xp: number): { rank: Rank; next: number | null; floor: nu
 export const levelOf = (xp: number) => Math.floor(xp / 100) + 1;
 
 // ── Memory (FSRS) ────────────────────────────────────────────────────────────────────────────────
-const scheduler = new FSRS({ enable_fuzz: true });
+// No same-day learning steps: a miss comes back tomorrow, which is what "you will see this again Thursday" can truthfully say.
+// "Fix your mistakes" is the immediate retry. Fuzz stays but is seeded per card and rep, so the date shown after an answer is the date stored.
+let fuzzSeed = "card";
+const scheduler = new FSRS({ enable_fuzz: true, enable_short_term: false }).useStrategy(StrategyMode.SEED, () => fuzzSeed);
 
 function toFsrs(m: CardMemory): FCard {
   return { ...m, due: new Date(m.due), last_review: m.last_review ? new Date(m.last_review) : undefined } as unknown as FCard;
@@ -113,7 +224,8 @@ export function recallMultiplier(m: CardMemory | undefined, now = new Date()): n
   return d === null ? 1 : d >= 30 ? 3 : d >= 7 ? 2 : 1;
 }
 
-export function reviewCard(m: CardMemory | undefined, correct: boolean, now = new Date()): CardMemory {
+export function reviewCard(m: CardMemory | undefined, correct: boolean, now = new Date(), seed = "card"): CardMemory {
+  fuzzSeed = `${seed}|${m?.reps ?? 0}|${m?.last_review ?? ""}|${correct}`;
   const card = m ? toFsrs(m) : createEmptyCard(now);
   const grade: Grade = (correct ? Rating.Good : Rating.Again) as Grade;
   const next = scheduler.next(card, now, grade).card;

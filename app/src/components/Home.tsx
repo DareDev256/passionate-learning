@@ -9,6 +9,7 @@ import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
 import { type Save, dueKeys, isCleared, isMastered, levelOf, rankOf, unitKey } from "@/lib/save";
 import { peekInProgress } from "@/lib/roundResume";
+import { questsOf } from "@/lib/quests";
 
 /**
  * A round iOS closed while it was in progress. The app always relaunches at Home, so the offer to pick it up lives here.
@@ -54,9 +55,9 @@ function worldProgress(w: World, save: Save) {
 }
 
 function guideLine(save: Save, due: number) {
-  const quest = save.quest;
+  const quest = questsOf(save);
   if (save.days.length === 0) return <>Yo. I&apos;m your guide. One round is <em>60 seconds</em>. That&apos;s the whole ask.</>;
-  if (quest.round && quest.review && quest.perfect) return <>Daily quest <em>cleared</em>. Everything else today is bonus. Go touch grass, or keep going.</>;
+  if (quest.allDone) return <>Daily quest <em>cleared</em>. Everything else today is bonus. Go touch grass, or keep going.</>;
   if (due > 0) return <><em>{due} card{due === 1 ? "" : "s"}</em> about to slip out of your brain. One round saves {due === 1 ? "it" : "them"}.</>;
   if (quest.round) return <>Round done today. That counts. A missed day <em>resets nothing</em> here.</>;
   return <>Back again. Pick a world. Or don&apos;t. I&apos;m a <em>drawing</em>.</>;
@@ -69,7 +70,7 @@ export function Home() {
   const up = nextUp(save);
   const span = r.next ? r.next - r.floor : 1;
   const pct = r.next ? Math.min(100, ((save.xp - r.floor) / span) * 100) : 100;
-  const face = save.quest.round ? "cool" : due > 0 ? "shock" : "grin";
+  const face = questsOf(save).round ? "cool" : due > 0 ? "shock" : "grin";
 
   return (
     <main className="wrap">
@@ -99,9 +100,7 @@ export function Home() {
       ) : (
         <SystemWindow title="DAILY QUEST">
         <ul className="quest">
-          <li className={save.quest.round ? "done" : ""}><span className="box">{save.quest.round ? "✓" : ""}</span><span>Finish 1 round <b>(counts as a full day)</b></span></li>
-          <li className={save.quest.review ? "done" : ""}><span className="box">{save.quest.review ? "✓" : ""}</span><span>Answer 1 review card</span></li>
-          <li className={save.quest.perfect ? "done" : ""}><span className="box">{save.quest.perfect ? "✓" : ""}</span><span>Get a perfect round</span></li>
+          <li className={questsOf(save).round ? "done" : ""}><span className="box">{questsOf(save).round ? "✓" : ""}</span><span>Finish 1 round <b>(counts as a full day)</b></span></li>
         </ul>
         <div className="sys-meter" aria-label={`Rank progress ${Math.round(pct)}%`}><i style={{ width: `${pct}%` }} /></div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>

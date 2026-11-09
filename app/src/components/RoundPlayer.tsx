@@ -245,11 +245,11 @@ function Recap({ world, unitId, result, levelBefore }: { world: NonNullable<Retu
       {result.speedBonus > 0 && <SystemWindow title="SPEED BONUS">Under {TARGET_SECONDS} seconds of thinking time. <b>+{result.speedBonus} XP</b>.</SystemWindow>}
       {result.mastered && <SystemWindow title="UNIT MASTERED" tone="gold">90% across your last three rounds. This one is <b>locked in your brain</b>.</SystemWindow>}
       {result.bonusCards > 0 && <SystemWindow title="RECALL BONUS">You remembered <b>{result.bonusCards}</b> card{result.bonusCards === 1 ? "" : "s"} after a week or more. Long-term memory pays double.</SystemWindow>}
-      {(q.round || q.review || q.perfect) && (
+      {(q.round || q.review || q.second) && (
         <SystemWindow title="QUEST PROGRESS">
           {q.round && <div>✓ Finish 1 round. <b>Today counts.</b></div>}
           {q.review && <div>✓ Answer a review card.</div>}
-          {q.perfect && <div>✓ Perfect round.</div>}
+          {q.second && <div>✓ Second round.</div>}
         </SystemWindow>
       )}
       <div className="recap-actions">

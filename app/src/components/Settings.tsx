@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/art/Logo";
-import { type MotionPref, type Settings as Prefs, freshSave } from "@/lib/save";
+import { type MotionPref, type Settings as Prefs, forgetLegacy, freshSave } from "@/lib/save";
 import { useSave } from "@/lib/useSave";
 import { applyMotion } from "./MotionClass";
 import { clearInProgress } from "@/lib/roundResume";
@@ -27,6 +27,7 @@ export function Settings() {
   const reset = () => {
     // A progress reset, not a preferences wipe: the player keeps their settings.
     update({ ...freshSave(), settings: save.settings });
+    forgetLegacy();
     clearInProgress(); // a half-played round belongs to the progress that was just reset
     setTyped("");
     setDidReset(true);

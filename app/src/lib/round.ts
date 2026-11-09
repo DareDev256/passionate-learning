@@ -1,7 +1,8 @@
 // Pure round logic: build a round, grade a response, apply the result to the save. No DOM, fully testable.
 import type { Card, Unit, World } from "@/content/types";
 import { cardKey, findCard } from "@/content";
-import { type Save, dueKeys, isMastered, rankOf, recallMultiplier, reviewCard, today, unitKey, type Rank } from "./save";
+import { type Save, dueKeys, freshQuests, isMastered, rankOf, recallMultiplier, reviewCard, today, unitKey, type Rank } from "./save";
+import { newId } from "./uuid";
 
 export interface RoundCard { key: string; card: Card; worldId: string; review: boolean }
 
@@ -71,7 +72,8 @@ export interface RoundResult {
   rankAfter: Rank;
   mastered: boolean;
   firstOfDay: boolean;
-  questDone: { round: boolean; review: boolean; perfect: boolean };
+  /** Quests this round newly completed. */
+  questDone: { round: boolean; review: boolean; second: boolean };
   /** Finished inside the 60-second target: a bonus, never a penalty. */
   speedBonus: number;
 }
@@ -80,16 +82,21 @@ export interface RoundResult {
 export const TARGET_SECONDS = 60;
 export const SPEED_BONUS = 15;
 
+/** Which of today's three quests are done. */
+function questFlags(q: Save["quests"]) { return { round: q.rounds >= 1, review: q.reviewed, second: q.rounds >= 2 }; }
+
 /** Applies a finished round to the save. Returns the new save plus everything the recap screen shows. */
 export function applyRound(save: Save, world: World, unit: Unit, answers: Answer[], now = new Date(), seconds?: number): RoundResult {
-  const s: Save = { ...save, cards: { ...save.cards }, units: { ...save.units }, days: [...save.days], quest: { ...save.quest } };
+  const s: Save = { ...save, cards: { ...save.cards }, units: { ...save.units }, days: [...save.days], quests: { ...save.quests }, events: [...save.events] };
+  const ownKeys = new Set(unit.cards.map((c) => cardKey(world.id, c)));
+  const nothingDue = dueKeys(save, now).every((k) => ownKeys.has(k));
   let xp = 0, bonusCards = 0;
   for (const a of answers) {
     const before = s.cards[a.key];
     const mult = a.correct ? recallMultiplier(before, now) : 1;
     if (mult > 1) bonusCards++;
     xp += a.correct ? BASE_XP * mult : 2; // trying still counts a little: safe failure
-    s.cards[a.key] = reviewCard(before, a.correct, now);
+    s.cards[a.key] = reviewCard(before, a.correct, now, a.key);
   }
   const correct = answers.filter((a) => a.correct).length;
   const total = answers.length;
@@ -105,11 +112,12 @@ export function applyRound(save: Save, world: World, unit: Unit, answers: Answer
   const day = today(now);
   const firstOfDay = !s.days.includes(day);
   if (firstOfDay) s.days.push(day);
-  if (s.quest.date !== day) s.quest = { date: day, round: false, review: false, perfect: false };
-  const qBefore = { ...s.quest };
-  s.quest.round = true;
-  if (answers.some((a) => a.review)) s.quest.review = true;
-  if (accuracy === 1 && total > 0) s.quest.perfect = true;
+  if (s.quests.date !== day) s.quests = freshQuests(now);
+  const qBefore = questFlags(s.quests);
+  s.quests.rounds += 1;
+  // The review quest has a floor: with nothing due there is nothing to clear, so answering a review card is not required.
+  if (answers.some((a) => a.review) || nothingDue) s.quests.reviewed = true;
+  s.events.push({ id: newId(), type: "round", unit: k, cards: answers.map((a) => a.key), correct: answers.map((a) => a.correct), durationMs: Math.round((seconds ?? 0) * 1000), clientTs: now.getTime() });
   const tokensGained = 1 + (accuracy === 1 ? 1 : 0);
   s.tokens += tokensGained;
   return {
@@ -118,6 +126,34 @@ export function applyRound(save: Save, world: World, unit: Unit, answers: Answer
     mastered: !isMastered(prev) && isMastered(s.units[k]),
     firstOfDay,
     speedBonus,
-    questDone: { round: !qBefore.round && s.quest.round, review: !qBefore.review && s.quest.review, perfect: !qBefore.perfect && s.quest.perfect },
+    questDone: (() => { const a = questFlags(s.quests); return { round: !qBefore.round && a.round, review: !qBefore.review && a.review, second: !qBefore.second && a.second }; })(),
   };
+}
+
+/** Keys of the cards answered wrong, in the order they were met, each once. */
+export function missedKeys(answers: Answer[]): string[] {
+  return [...new Set(answers.filter((a) => !a.correct).map((a) => a.key))];
+}
+
+/** XP for a card put right in a fix pass. Smaller than a round's 10: the point is the memory, not the score. */
+export const FIX_XP = 5;
+
+export interface FixResult { save: Save; xpGained: number; correct: number; total: number }
+
+/**
+ * Applies a "fix your mistakes" pass. Card memory is reviewed and the review quest is ticked, but unit progress, days played,
+ * tokens and the round quests are left alone: a fix pass is practice on top of a round, never a second score for it.
+ */
+export function applyFix(save: Save, unit: string, answers: Answer[], now = new Date(), seconds?: number): FixResult {
+  const s: Save = { ...save, cards: { ...save.cards }, quests: { ...save.quests }, events: [...save.events] };
+  let xp = 0;
+  for (const a of answers) {
+    s.cards[a.key] = reviewCard(s.cards[a.key], a.correct, now, a.key);
+    if (a.correct) xp += FIX_XP;
+  }
+  s.xp += xp;
+  if (s.quests.date !== today(now)) s.quests = freshQuests(now);
+  if (answers.length) s.quests.reviewed = true;
+  s.events.push({ id: newId(), type: "fix", unit, cards: answers.map((a) => a.key), correct: answers.map((a) => a.correct), durationMs: Math.round((seconds ?? 0) * 1000), clientTs: now.getTime() });
+  return { save: s, xpGained: xp, correct: answers.filter((a) => a.correct).length, total: answers.length };
 }

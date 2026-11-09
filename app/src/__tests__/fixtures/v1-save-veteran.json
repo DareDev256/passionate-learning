@@ -1,0 +1,370 @@
+{
+  "v": 1,
+  "xp": 520,
+  "days": [
+    "2026-10-20",
+    "2026-10-22",
+    "2026-10-27",
+    "2026-11-02",
+    "2026-11-06"
+  ],
+  "cards": {
+    "prompt:pd-005": {
+      "due": "2026-11-06T12:05:00.000Z",
+      "stability": 1.96226693,
+      "difficulty": 6.79056769,
+      "elapsed_days": 17,
+      "scheduled_days": 0,
+      "reps": 3,
+      "lapses": 1,
+      "state": 3,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-004": {
+      "due": "2026-10-25T14:10:00.000Z",
+      "stability": 4.46685806,
+      "difficulty": 5.27296793,
+      "elapsed_days": 0,
+      "scheduled_days": 5,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-10-20T14:10:00.000Z",
+      "seen": 2,
+      "correct": 2
+    },
+    "prompt:pd-002": {
+      "due": "2026-10-25T14:10:00.000Z",
+      "stability": 4.46685806,
+      "difficulty": 5.27296793,
+      "elapsed_days": 0,
+      "scheduled_days": 5,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-10-20T14:10:00.000Z",
+      "seen": 2,
+      "correct": 2
+    },
+    "prompt:pd-006": {
+      "due": "2026-10-25T14:10:00.000Z",
+      "stability": 4.46685806,
+      "difficulty": 5.27296793,
+      "elapsed_days": 0,
+      "scheduled_days": 5,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-10-20T14:10:00.000Z",
+      "seen": 2,
+      "correct": 2
+    },
+    "prompt:pd-003": {
+      "due": "2026-10-25T19:00:00.000Z",
+      "stability": 3.87213004,
+      "difficulty": 7.15845635,
+      "elapsed_days": 2,
+      "scheduled_days": 3,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-10-22T19:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-001": {
+      "due": "2026-11-10T12:00:00.000Z",
+      "stability": 5.27707706,
+      "difficulty": 8.03820349,
+      "elapsed_days": 15,
+      "scheduled_days": 4,
+      "reps": 4,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 4,
+      "correct": 2
+    },
+    "prompt:pd-105": {
+      "due": "2026-11-08T12:00:00.000Z",
+      "stability": 2.23802331,
+      "difficulty": 6.7804994,
+      "elapsed_days": 10,
+      "scheduled_days": 2,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-104": {
+      "due": "2026-11-08T12:00:00.000Z",
+      "stability": 2.23802331,
+      "difficulty": 6.7804994,
+      "elapsed_days": 10,
+      "scheduled_days": 2,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-102": {
+      "due": "2026-11-08T12:00:00.000Z",
+      "stability": 2.23802331,
+      "difficulty": 6.7804994,
+      "elapsed_days": 4,
+      "scheduled_days": 2,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-106": {
+      "due": "2026-11-08T12:00:00.000Z",
+      "stability": 2.23802331,
+      "difficulty": 6.7804994,
+      "elapsed_days": 4,
+      "scheduled_days": 2,
+      "reps": 3,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 3,
+      "correct": 2
+    },
+    "prompt:pd-103": {
+      "due": "2026-11-11T12:00:00.000Z",
+      "stability": 4.46685806,
+      "difficulty": 5.27296793,
+      "elapsed_days": 15,
+      "scheduled_days": 5,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 2,
+      "correct": 2
+    },
+    "prompt:pd-101": {
+      "due": "2026-11-11T12:00:00.000Z",
+      "stability": 4.46685806,
+      "difficulty": 5.27296793,
+      "elapsed_days": 15,
+      "scheduled_days": 5,
+      "reps": 2,
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2026-11-06T12:00:00.000Z",
+      "seen": 2,
+      "correct": 2
+    },
+    "token:tt-005": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "token:tt-004": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "token:tt-002": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "token:tt-006": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "token:tt-003": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "token:tt-001": {
+      "due": "2026-10-27T13:40:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-10-27T13:30:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "cap:cd-005": {
+      "due": "2026-11-02T18:10:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "cap:cd-004": {
+      "due": "2026-11-02T18:10:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "cap:cd-002": {
+      "due": "2026-11-02T18:10:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "cap:cd-006": {
+      "due": "2026-11-02T18:10:00.000Z",
+      "stability": 3.173,
+      "difficulty": 5.28243442,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 1
+    },
+    "cap:cd-003": {
+      "due": "2026-11-02T18:01:00.000Z",
+      "stability": 0.40255,
+      "difficulty": 7.1949,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 0
+    },
+    "cap:cd-001": {
+      "due": "2026-11-02T18:01:00.000Z",
+      "stability": 0.40255,
+      "difficulty": 7.1949,
+      "elapsed_days": 0,
+      "scheduled_days": 0,
+      "reps": 1,
+      "lapses": 0,
+      "state": 1,
+      "last_review": "2026-11-02T18:00:00.000Z",
+      "seen": 1,
+      "correct": 0
+    }
+  },
+  "units": {
+    "prompt/say-it": {
+      "last": [
+        0.6666666666666666,
+        0.8333333333333334
+      ],
+      "best": 0.8333333333333334,
+      "rounds": 2
+    },
+    "prompt/recipe": {
+      "last": [
+        1,
+        0.875
+      ],
+      "best": 1,
+      "rounds": 2
+    },
+    "token/next-word": {
+      "last": [
+        0.75
+      ],
+      "best": 0.75,
+      "rounds": 1
+    },
+    "cap/cap-or-facts": {
+      "last": [
+        0.5
+      ],
+      "best": 0.5,
+      "rounds": 1
+    }
+  },
+  "quest": {
+    "date": "2026-11-06",
+    "round": true,
+    "review": true,
+    "perfect": false
+  },
+  "tokens": 7,
+  "settings": {
+    "sound": false,
+    "haptics": true,
+    "motion": "reduce",
+    "name": "Dee"
+  }
+}
