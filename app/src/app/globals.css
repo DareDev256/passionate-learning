@@ -89,7 +89,7 @@ html[data-theme="bubblegum"] { --paper: #ff2e93; --ink: #0a0a0a; --accent: #fff2
 .btn.ink { background: var(--ink); }
 .btn.ghost { background: var(--paper); color: var(--ink); }
 .btn.block { display: flex; width: 100%; }
-.btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: 0 5px 0 var(--ink); }
+.btn[disabled] { opacity: 1; background: transparent; color: var(--mid); border-style: dashed; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* ---------- System window ---------- */
 .sys { position: relative; background: var(--sys-bg); color: var(--sys-text); border: 1.5px solid var(--sys-edge); border-radius: 6px; padding: 14px 16px 16px; margin: 0 0 18px; box-shadow: 0 0 0 1px rgba(61, 224, 255, 0.25), 0 0 22px rgba(61, 224, 255, 0.35), inset 0 0 26px rgba(61, 224, 255, 0.12); font-family: var(--mono); animation: sys-in 0.35s cubic-bezier(.2,.9,.3,1.3); }
