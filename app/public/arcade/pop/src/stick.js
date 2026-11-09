@@ -78,7 +78,7 @@ class StickFigure {
 
   /** Jump. Power 1 is a small bounce; 3 is a leap. */
   hop(power = 1) {
-    if (this.hopY < 2) { this.vy = -230 * Math.sqrt(power); this.squash = -0.18; }
+    if (this.hopY < 2) { this.vy = -170 * Math.sqrt(Math.min(power, 2.2)); this.squash = -0.18; }
   }
 
   update(dtMs, tMs, reduce) {
@@ -259,10 +259,10 @@ class Cast {
     const ground = h - 14;
     this.ground = ground;
     const wear = (P.wear && P.wear.length) ? P.wear : ['hero'];
-    this.hero = new StickFigure({ wear, scale: 1.12, name: 'Hero', seed: 1 });
-    this.pro = new StickFigure({ wear: ['glasses', 'tie'], scale: 0.98, name: 'Pro', seed: 2, flip: true });
-    this.bolt = new StickFigure({ robot: true, scale: 0.98, name: 'Bolt', seed: 3 });
-    this.spark = new StickFigure({ wear: ['bun'], scale: 0.92, name: 'Spark', seed: 4 });
+    this.hero = new StickFigure({ wear, scale: 1.0, name: 'Hero', seed: 1 });
+    this.pro = new StickFigure({ wear: ['glasses', 'tie'], scale: 0.92, name: 'Pro', seed: 2, flip: true });
+    this.bolt = new StickFigure({ robot: true, scale: 0.92, name: 'Bolt', seed: 3 });
+    this.spark = new StickFigure({ wear: ['bun'], scale: 0.88, name: 'Spark', seed: 4 });
     this.members = [this.spark, this.hero, this.pro, this.bolt];
     const xs = [w * 0.13, w * 0.36, w * 0.62, w * 0.86];
     this.members.forEach((m, i) => { m.x = xs[i]; m.y = ground; });
@@ -292,12 +292,14 @@ class Cast {
   onPop(count, streak, px) {
     if (this.feverOn || this.panicOn) return;
     if (px !== undefined) this.lookAt(px);
-    if (streak <= 2) {
-      this.hero.setFace(count >= 4 ? 'grin' : 'happy');
-      this.hero.hop(count >= 4 ? 1.1 : 0.55);
-      if (count >= 4) this.spark.hop(0.6);
-      this._hold(450);
-    }
+    this.popN = (this.popN || 0) + 1;
+    // Each pop one of the crew reacts in their own way, in turn.
+    const who = this.popN % 4;
+    if (who === 0) { this.hero.setPose('cheer', 90); this.hero.setFace(count >= 4 ? 'grin' : 'happy'); this.hero.hop(count >= 4 ? 1.1 : 0.6); }
+    else if (who === 1) { this.spark.setPose('cheer', 90); this.spark.setFace('grin'); this.spark.hop(0.9); }
+    else if (who === 2) { this.pro.setPose('think', 110); this.pro.setFace('smug'); this.pro.hop(0.4); }
+    else { this.bolt.setPose('wave', 90); this.bolt.setFace('grin'); this.bolt.hop(0.7); }
+    if (streak <= 2) this._hold(520);
   }
 
   /** A streak tier arrived (1 = NICE at 3, 2 = FIRE at 5, 3 = GODLIKE at 8, 4 = LEGENDARY at 12). */
@@ -305,9 +307,9 @@ class Cast {
     if (this.feverOn || this.panicOn) return;
     this.mood = 'streak';
     this.hero.setPose('cheer', 110); this.hero.setFace('grin'); this.hero.hop(1.4 + tier * 0.3);
-    if (tier >= 1) { this.spark.setPose('cheer', 130); this.spark.setFace('grin'); this.spark.hop(1); }
-    if (tier >= 2) { this.pro.setPose('present', 130); this.pro.setFace('smug'); this.pro.hop(0.7); }
-    if (tier >= 3) { this.bolt.setPose('cheer', 130); this.bolt.setFace('grin'); this.bolt.hop(1.2); this.pro.setPose('cheer', 130); this.pro.setFace('grin'); }
+    if (tier >= 1) setTimeout(() => { this.spark.setPose('cheer', 130); this.spark.setFace('grin'); this.spark.hop(1); }, 80);
+    if (tier >= 2) setTimeout(() => { this.pro.setPose('present', 130); this.pro.setFace('smug'); this.pro.hop(0.7); }, 160);
+    if (tier >= 3) setTimeout(() => { this.bolt.setPose('cheer', 130); this.bolt.setFace('grin'); this.bolt.hop(1.2); this.pro.setPose('cheer', 130); this.pro.setFace('grin'); }, 240);
     if (tier >= 4) { this.hero.setFace('cool'); this.members.forEach((m) => { m.extras.sparkle = true; m.hop(1.6); }); }
     this._hold(1500);
   }

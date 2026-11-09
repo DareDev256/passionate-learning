@@ -595,6 +595,7 @@ class BootScene extends Phaser.Scene {
     const drawBubble = (ctx, hex, symbol) => {
       const cx = S / 2, cy = S / 2 - 1.2, r = S / 2 - 3.2;
       if (!P.inkIsLight) { ctx.fillStyle = P.ink; ctx.beginPath(); ctx.arc(cx, cy + 2.6, r + 1, 0, Math.PI * 2); ctx.fill(); }
+      else { ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(cx, cy + 2.2, r + 1, 0, Math.PI * 2); ctx.fill(); }
       ctx.fillStyle = hex; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
       // Under-curve shade
       ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
@@ -681,15 +682,15 @@ class TitleScene extends Phaser.Scene {
     const bw = width - 60, bh = 54, x = width / 2;
     let y = 410;
     createButton(this, { x, y, width: bw, height: bh, text: 'TIMED MODE', subtext: '90 seconds. Chase the high score.', color: 'hot',
-      iconFn: (s, bx, by) => Icons.timer(s, bx, by, 18, P.inkN), callback: () => this.scene.start('GameScene', { mode: 'timed' }) });
+      iconFn: (s, bx, by) => Icons.timer(s, bx, by, 24, P.inkN), callback: () => this.scene.start('GameScene', { mode: 'timed' }) });
     y += 72;
     createButton(this, { x, y, width: bw, height: bh, text: 'ZEN MODE', subtext: 'No timer. Just pop.',
-      iconFn: (s, bx, by) => Icons.zen(s, bx, by, 18, P.inkN), callback: () => this.scene.start('GameScene', { mode: 'zen' }) });
+      iconFn: (s, bx, by) => Icons.zen(s, bx, by, 24, P.inkN), callback: () => this.scene.start('GameScene', { mode: 'zen' }) });
     y += 72;
     const dailyDone = DailyChallenge.isCompleted();
     createButton(this, { x, y, width: bw, height: bh, text: 'DAILY CHALLENGE',
       subtext: dailyDone ? `Best ${DailyChallenge.bestScore().toLocaleString()}. Tap to beat it.` : `${DailyChallenge.displayDate()}. Same board for everyone.`,
-      iconFn: (s, bx, by) => Icons.fire(s, bx, by, 18, P.hotN), callback: () => this.scene.start('GameScene', { mode: 'daily' }) });
+      iconFn: (s, bx, by) => Icons.fire(s, bx, by, 24, P.hotN), callback: () => this.scene.start('GameScene', { mode: 'daily' }) });
     y += 72;
     const half = (bw - 12) / 2;
     createButton(this, { x: x - half / 2 - 6, y, width: half, height: 46, text: 'HOW TO PLAY', callback: () => this.scene.start(SafeStorage.get(SK.PLAYED, null) ? 'TipsScene' : 'TutorialScene') });
@@ -794,7 +795,7 @@ class GameOverScene extends Phaser.Scene {
     });
 
     // Grade stamp, slammed on after the score lands.
-    const gradeY = cardY + cardH + 58;
+    const gradeY = cardY + cardH + 52;
     const stamp = this.add.container(width / 2, gradeY).setScale(0).setAngle(-10);
     const ring = this.add.graphics();
     ring.fillStyle(P.inkN, 1); ring.fillCircle(0, 4, 42);
@@ -807,15 +808,14 @@ class GameOverScene extends Phaser.Scene {
     stamp.add([ring, letter]);
     this.tweens.add({ targets: stamp, scale: 1, angle: -4, duration: 360, delay: this.reduce ? 0 : 1700, ease: 'Back.easeOut',
       onStart: () => { if (!this.reduce) this.cameras.main.shake(120, 0.004); } });
-    this.add.text(width / 2 + 62, gradeY - 8, gradeInfo.label, textStyle('badge', { fontSize: '13px', color: P.ink, stroke: '', strokeThickness: 0, letterSpacing: 3 })).setOrigin(0, 0.5);
-    this.add.text(width / 2 - 62, gradeY - 8, `${mode.toUpperCase()}`, textStyle('label', { fontSize: '10px', letterSpacing: 3, color: P.muted })).setOrigin(1, 0.5);
+    this.add.text(width / 2, gradeY + 54, `${gradeInfo.label}  ·  ${mode.toUpperCase()}`, textStyle('badge', { fontSize: '13px', color: P.ink, stroke: '', strokeThickness: 0, letterSpacing: 3 })).setOrigin(0.5, 0.5);
 
     const gradeKey = SK.BEST_GRADE(mode);
     const prevBest = SafeStorage.get(gradeKey, 'F');
     if ('SABCDF'.indexOf(gradeInfo.grade) < 'SABCDF'.indexOf(prevBest)) SafeStorage.set(gradeKey, gradeInfo.grade);
     if (mode === 'daily') {
       const total = DailyChallenge.totalCompleted();
-      if (total > 1) this.add.text(width / 2, gradeY + 56, `${total} dailies completed`, textStyle('label', { fontSize: '10px', color: P.muted })).setOrigin(0.5);
+      if (total > 1) this.add.text(width / 2, gradeY + 76, `${total} dailies completed`, textStyle('label', { fontSize: '10px', color: P.muted })).setOrigin(0.5);
     }
 
     // Buttons
@@ -829,7 +829,7 @@ class GameOverScene extends Phaser.Scene {
 
     if (isNewHigh && !this.reduce) {
       this.time.addEvent({ delay: 90, repeat: 34, callback: () => {
-        const p = this.add.image(Phaser.Math.Between(0, width), -10, 'conf').setScale(Phaser.Math.FloatBetween(0.8, 1.6) * BS).setDepth(20);
+        const p = this.add.image(Phaser.Math.Between(0, width), -10, 'conf').setScale(Phaser.Math.FloatBetween(0.8, 1.6) * BS).setDepth(-2);
         p.setTint(Phaser.Math.RND.pick([...P.bubblesN, P.hotN]));
         this.tweens.add({ targets: p, y: height + 20, x: p.x + Phaser.Math.Between(-60, 60), rotation: Phaser.Math.FloatBetween(-6, 6), duration: Phaser.Math.Between(1500, 2800), onComplete: () => p.destroy() });
       } });
@@ -1482,25 +1482,17 @@ class GameScene extends Phaser.Scene {
     this.stageDeco = this.add.graphics().setDepth(1);
     this.stageDeco.fillStyle(P.inkN, 0.55);
     for (let x = stageX + 14; x < stageX + stageW - 10; x += 9) this.stageDeco.fillRect(x, groundY + 1, 3, 2);
-    this.stageDeco.lineStyle(2, P.inkN, 0.22);
-    [[330, STAGE_Y + 96, 1], [88, STAGE_Y + 110, 0.7]].forEach(([cx, cy, s]) => {
-      this.stageDeco.beginPath();
-      this.stageDeco.arc(cx, cy, 11 * s, Math.PI, 0, false);
-      this.stageDeco.arc(cx + 14 * s, cy + 1, 9 * s, Math.PI * 1.05, Math.PI * 0.1, false);
-      this.stageDeco.lineBetween(cx - 11 * s, cy, cx + 22 * s, cy);
-      this.stageDeco.strokePath();
-    });
 
     this.cast = new Cast(this, stageX, STAGE_Y, stageW, STAGE_H);
     // Name tags under the ground line.
     [this.cast.spark, this.cast.hero, this.cast.pro, this.cast.bolt].forEach((m) => {
-      this.add.text(stageX + m.x, groundY + 4, m.name.toUpperCase(), textStyle('label', { fontSize: '8px', color: P.muted, letterSpacing: 2 })).setOrigin(0.5, 0).setDepth(5);
+      this.add.text(stageX + m.x, groundY + 4, m.name.toUpperCase(), textStyle('label', { fontSize: '9px', color: P.muted, letterSpacing: 2 })).setOrigin(0.5, 0).setDepth(5);
     });
 
     // Streak banner lives in the top band of the stage; no figure reaches it at rest.
     this.hypeBar = this.add.container(0, 0).setDepth(6);
     this.streakText = this.add.text(stageX + 14, STAGE_Y + 9, '', textStyle('heading', { fontSize: '24px', strokeThickness: 0, color: P.hot })).setOrigin(0, 0).setAlpha(0);
-    this.adlibText = this.add.text(stageX + stageW - 14, STAGE_Y + 13, '', textStyle('stat', { fontSize: '16px', fontStyle: 'italic', color: P.ink })).setOrigin(1, 0).setAlpha(0);
+    this.adlibText = this.add.text(stageX + stageW - 14, STAGE_Y + 13, '', textStyle('stat', { fontSize: '18px', fontStyle: 'bold italic', color: P.ink })).setOrigin(1, 0).setAlpha(0);
     this.charNameText = this.add.text(-100, -100, '').setAlpha(0);
     this.characterGfx = this.add.graphics().setAlpha(0);
     this.hypeBar.add([this.streakText, this.adlibText]);
@@ -1519,6 +1511,7 @@ class GameScene extends Phaser.Scene {
 
     // ---- FOOTER: multiplier badge, streak, best, tip ----
     const footY = boardY + boardH + 14;
+    this.footY = footY;
     this.streakCounter = this.add.text(96, footY + 4, '', textStyle('stat', { fontSize: '16px', color: P.ink, fontStyle: 'bold' })).setOrigin(0, 0);
     this.bestStreakText = this.add.text(96, footY + 26, '', textStyle('muted', { fontSize: '12px', color: P.muted })).setOrigin(0, 0);
     this.modeText = this.add.text(width - 18, footY + 6, this.gameMode === 'zen' ? 'ZEN MODE' : this.gameMode === 'daily' ? 'DAILY CHALLENGE' : 'TIMED MODE',
@@ -1540,6 +1533,13 @@ class GameScene extends Phaser.Scene {
 
     // Ambient particles
     this.spawnAmbientParticles();
+    // The board breathes: one random bubble wiggles now and then.
+    if (!this.reduce) this.time.addEvent({ delay: 900, loop: true, callback: () => {
+      if (this.isPaused || this.gameOver || this.isProcessing) return;
+      const b = this.grid[Phaser.Math.Between(0, GRID_ROWS - 1)]?.[Phaser.Math.Between(0, GRID_COLS - 1)];
+      if (!b || !b.active || b.getData('wob')) return;
+      this.tweens.add({ targets: b, angle: { from: -9, to: 9 }, scaleY: 0.95 * BS * 1.07, scaleX: 0.95 * BS * 0.96, duration: 130, yoyo: true, repeat: 1, ease: 'Sine.easeInOut', onComplete: () => { if (b.active) { b.angle = 0; b.setScale(0.95 * BS); } } });
+    } });
 
     // ---- HUD TOOLBAR (pause / hint / mute) ----
     const tbSize = 40;
@@ -1624,15 +1624,15 @@ class GameScene extends Phaser.Scene {
 
     // ---- FEVER METER (left-edge vertical bar beside the board) ----
     this.feverGfx = this.add.graphics().setDepth(35);
-    const fmX = 7;
+    const fmX = 9;
     const fmTop = GRID_OFFSET_Y + 14;
     const fmH = GRID_ROWS * (BUBBLE_SIZE + BUBBLE_PAD) - 30;
-    this.feverBarBounds = { x: fmX, y: fmTop, w: 12, h: fmH };
-    this.feverLabelText = this.add.text(fmX + 6, fmTop - 6, 'FEVER',
-      textStyle('label', { fontSize: '7px', color: P.muted, letterSpacing: 0 }))
+    this.feverBarBounds = { x: fmX, y: fmTop, w: 14, h: fmH };
+    this.feverLabelText = this.add.text(fmX + 7, fmTop - 6, 'FEVER',
+      textStyle('label', { fontSize: '8px', color: P.muted, letterSpacing: 0 }))
       .setOrigin(0.5, 1).setDepth(36);
-    this.feverPctText = this.add.text(fmX + 6, fmTop + fmH + 6, '',
-      textStyle('badge', { fontSize: '9px', color: P.muted, stroke: '', strokeThickness: 0 }))
+    this.feverPctText = this.add.text(fmX + 7, fmTop + fmH + 6, '',
+      textStyle('badge', { fontSize: '11px', color: P.muted, stroke: '', strokeThickness: 0 }))
       .setOrigin(0.5, 0).setDepth(36);
 
     // Fever drain timer: the meter decays when not matching
@@ -1838,8 +1838,11 @@ class GameScene extends Phaser.Scene {
     this.feverGfx.lineStyle(2.5, P.inkN, 1);
     this.feverGfx.strokeRoundedRect(fb.x, fb.y, fb.w, fb.h, 6);
 
-    // Fever active: an accent frame around the whole screen.
+    // Fever active: the board glows in the accent and an accent frame wraps the screen.
     if (this.feverActive) {
+      const br = this.boardRect;
+      this.feverGfx.fillStyle(P.hotN, 0.1 + 0.07 * Math.sin(time * 0.01));
+      this.feverGfx.fillRoundedRect(br.x, br.y, br.w, br.h, 14);
       const glow = 0.45 + 0.3 * Math.sin(time * 0.008);
       this.feverGfx.lineStyle(6, P.hotN, glow);
       this.feverGfx.strokeRect(3, 3, VIEW.width - 6, VIEW.height - 6);
@@ -1947,46 +1950,23 @@ class GameScene extends Phaser.Scene {
    * Staggered via delay param so multiple unlocks don't overlap.
    */
   showAchievementToast(ach, delay = 0) {
-    const { width } = VIEW;
-    const toastY = GRID_OFFSET_Y + 446;
-    const toastW = Math.min(width - 30, 280);
-    const toastX = width / 2;
-
-    const container = this.add.container(toastX, toastY - 50).setDepth(70).setAlpha(0);
-
-    // Background card
+    const toastW = 214;
+    const toastX = VIEW.width - 18 - toastW / 2;
+    const toastY = this.footY + 24;
+    if (this.modeText) this.modeText.setAlpha(0);
+    const container = this.add.container(toastX + 40, toastY).setDepth(70).setAlpha(0);
     const bg = this.add.graphics();
-    bg.fillStyle(P.inkN, 1);
-    bg.fillRoundedRect(-toastW / 2, -14, toastW, 36, 10);
-    bg.fillStyle(P.cardN, 1);
-    bg.fillRoundedRect(-toastW / 2, -18, toastW, 36, 10);
-    const borderColor = P.hotN;
-    bg.lineStyle(2.5, P.inkN, 1);
-    bg.strokeRoundedRect(-toastW / 2, -18, toastW, 36, 10);
+    bg.fillStyle(P.inkN, 1); bg.fillRoundedRect(-toastW / 2, -15, toastW, 38, 10);
+    bg.fillStyle(P.cardN, 1); bg.fillRoundedRect(-toastW / 2, -19, toastW, 38, 10);
+    bg.lineStyle(2.5, P.inkN, 1); bg.strokeRoundedRect(-toastW / 2, -19, toastW, 38, 10);
     container.add(bg);
-
-    // Star icon (left side)
-    const star = Icons.star(this, -toastW / 2 + 20, 0, 14, P.inkN);
-    star.setDepth(71);
-    container.add(star);
-
-    // Achievement text
-    const label = this.add.text(4, -1, ach.name, textStyle('badge', { fontSize: '14px', color: P.ink, stroke: '', strokeThickness: 0 })).setOrigin(0.5);
-    container.add(label);
-
-    // Slide in + fade
+    const star = Icons.star(this, -toastW / 2 + 20, 0, 14, P.inkN); star.setDepth(71); container.add(star);
+    container.add(this.add.text(10, -1, ach.name, textStyle('badge', { fontSize: '14px', color: P.ink, stroke: '', strokeThickness: 0 })).setOrigin(0.5));
+    this.tweens.add({ targets: container, x: toastX, alpha: 1, duration: 260, delay, ease: 'Back.easeOut' });
     this.tweens.add({
-      targets: container, y: toastY, alpha: 1,
-      duration: 400, delay, ease: 'Back.easeOut',
+      targets: container, x: toastX + 40, alpha: 0, duration: 260, delay: delay + 2400, ease: 'Quad.easeIn',
+      onComplete: () => { container.destroy(true); if (this.modeText && this.modeText.active) this.modeText.setAlpha(1); },
     });
-    // Dismiss
-    this.tweens.add({
-      targets: container, y: toastY - 30, alpha: 0,
-      duration: 300, delay: delay + 2200, ease: 'Quad.easeIn',
-      onComplete: () => container.destroy(true),
-    });
-
-    // Play a satisfying unlock sound
     if (window.audioEngine?.initialized) {
       const t = window.audioEngine.ctx.currentTime + delay / 1000;
       window.audioEngine._tone(t, { type: 'triangle', freq: 880, vol: 0.12, dur: 0.15 });
@@ -2634,6 +2614,7 @@ class GameScene extends Phaser.Scene {
     if (powerUpsToCreate.length) this.cast.onPowerUpMade();
     if (powerUpsToActivate.length) this.cast.onBlast();
     if (depth >= 2) this.cast.onChain(depth);
+    if (!this.reduce) this.shake(70, 0.0016 + Math.min(totalPopped, 8) * 0.0004);
     // A big hit freezes the frame for a breath before it lands.
     if (totalPopped >= 6 || depth >= 3 || powerUpsToActivate.length) this.hitStop(depth >= 3 ? 130 : 85);
 
@@ -2666,11 +2647,11 @@ class GameScene extends Phaser.Scene {
     this.triggerHypeBar();
 
     // Drop + refill cycle
-    this.time.delayedCall(300, () => {
+    this.time.delayedCall(170, () => {
       this.dropBubbles();
-      this.time.delayedCall(350, () => {
+      this.time.delayedCall(120, () => {
         this.refillGrid();
-        this.time.delayedCall(400, () => {
+        this.time.delayedCall(330, () => {
           const newMatches = this.findAllMatches();
           if (newMatches.length > 0) {
             this.processMatches(newMatches, depth + 1);
@@ -2778,9 +2759,13 @@ class GameScene extends Phaser.Scene {
       },
     });
 
+    // Dim the board under the banner so the title reads and the moment takes over the screen.
+    const dim = this.add.graphics().setDepth(53);
+    dim.fillStyle(P.bgN, 0.72); dim.fillRoundedRect(this.boardRect.x, this.boardRect.y, this.boardRect.w, this.boardRect.h, 14);
+    this.tweens.add({ targets: dim, alpha: 0, duration: 500, delay: 900, onComplete: () => dim.destroy() });
     this.screenFlash(P.hotN);
-    this.shake(220, 0.012);
-    this.hitStop(160, 0.2);
+    this.shake(260, 0.014);
+    this.hitStop(320, 0.15);
     this.cast.setFever(true);
     this.confettiBurst(34);
     window.audioEngine.playStreakHit(12);
