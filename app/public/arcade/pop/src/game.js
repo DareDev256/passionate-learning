@@ -786,8 +786,8 @@ class GameOverScene extends Phaser.Scene {
     const colW = (width - 70) / stats.length;
     stats.forEach((s, i) => {
       const cx = 35 + colW * (i + 0.5);
-      this.add.text(cx, cardY + 134, s.v, textStyle('heading', { fontSize: '22px', color: P.ink, strokeThickness: 0 })).setOrigin(0.5);
-      this.add.text(cx, cardY + 160, s.l, textStyle('label', { fontSize: '8px', letterSpacing: 1, color: P.muted })).setOrigin(0.5);
+      this.add.text(cx, cardY + 132, s.v, textStyle('heading', { fontSize: '26px', color: P.ink, strokeThickness: 0 })).setOrigin(0.5);
+      this.add.text(cx, cardY + 160, s.l, textStyle('label', { fontSize: '10px', letterSpacing: 1, color: P.muted })).setOrigin(0.5);
     });
 
     // Grade stamp, slammed on after the score lands.
@@ -1511,9 +1511,9 @@ class GameScene extends Phaser.Scene {
     const footY = boardY + boardH + 14;
     this.footY = footY;
     this.streakCounter = this.add.text(96, footY + 4, '', textStyle('stat', { fontSize: '16px', color: P.ink, fontStyle: 'bold' })).setOrigin(0, 0);
-    this.bestStreakText = this.add.text(96, footY + 26, '', textStyle('muted', { fontSize: '12px', color: P.muted })).setOrigin(0, 0);
+    this.bestStreakText = this.add.text(96, footY + 26, '', textStyle('muted', { fontSize: '13px', color: P.muted })).setOrigin(0, 0);
     this.modeText = this.add.text(width - 18, footY + 6, this.gameMode === 'zen' ? 'ZEN MODE' : this.gameMode === 'daily' ? 'DAILY CHALLENGE' : 'TIMED MODE',
-      textStyle('label', { fontSize: '10px', color: P.muted, letterSpacing: 2 })).setOrigin(1, 0);
+      textStyle('label', { fontSize: '12px', color: P.muted, letterSpacing: 2 })).setOrigin(1, 0);
 
     // ---- POWER-UP OVERLAY (drawn each frame for pulsing effects) ----
     this.powerUpOverlay = this.add.graphics();
@@ -1597,7 +1597,7 @@ class GameScene extends Phaser.Scene {
     // ---- TIPS DISPLAY (one line at the bottom) ----
     this.tipIndex = Phaser.Math.Between(0, TIPS.length - 1);
     this.tipText = this.add.text(width / 2, height - 9, TIPS[this.tipIndex],
-      textStyle('label', { fontSize: '11px', letterSpacing: 0, color: P.muted, fontStyle: 'italic' }),
+      textStyle('label', { fontSize: '13px', letterSpacing: 0, color: P.muted, fontStyle: 'italic' }),
     ).setOrigin(0.5, 1).setDepth(1);
     this.time.addEvent({
       delay: 8000, loop: true,
@@ -1781,6 +1781,9 @@ class GameScene extends Phaser.Scene {
     this.renderPowerUpOverlays(time);
     this.renderFeverMeter(time);
     this.renderHintGlow(time);
+    if (this.feverActive && !this.reduce && !this.isProcessing) {
+      forEachCell((r, c) => { const b = this.grid[r]?.[c]; if (b && b.active && !b.getData('wob')) b.setScale(BS * (0.95 + 0.05 * Math.sin(time * 0.014 + c * 0.9 + r * 0.5))); });
+    }
     if (this.cast) this.cast.update(time, delta);
   }
 
@@ -2768,12 +2771,12 @@ class GameScene extends Phaser.Scene {
 
     // Dim the board under the banner so the title reads and the moment takes over the screen.
     const plate = this.add.graphics().setDepth(54);
-    plate.fillStyle(P.inkN, 1); plate.fillRoundedRect(width / 2 - 170, cy - 52, 340, 124, 18);
-    plate.fillStyle(P.cardN, 1); plate.fillRoundedRect(width / 2 - 170, cy - 56, 340, 124, 18);
-    plate.lineStyle(4, P.inkN, 1); plate.strokeRoundedRect(width / 2 - 170, cy - 56, 340, 124, 18);
+    plate.fillStyle(P.inkN, 1); plate.fillRoundedRect(width / 2 - 150, cy - 44, 300, 104, 18);
+    plate.fillStyle(P.cardN, 1); plate.fillRoundedRect(width / 2 - 150, cy - 48, 300, 104, 18);
+    plate.lineStyle(4, P.inkN, 1); plate.strokeRoundedRect(width / 2 - 150, cy - 48, 300, 104, 18);
     plate.setScale(0.6).setAlpha(0);
     this.tweens.add({ targets: plate, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
-    this.tweens.add({ targets: plate, alpha: 0, duration: 400, delay: 1100, onComplete: () => plate.destroy() });
+    this.tweens.add({ targets: plate, alpha: 0, duration: 300, delay: 800, onComplete: () => plate.destroy() });
     this.screenFlash(P.hotN);
     this.shake(260, 0.014);
     this.hitStop(320, 0.15);
@@ -2844,7 +2847,8 @@ class GameScene extends Phaser.Scene {
       });
     };
     if (this.reduce) { this.time.delayedCall(delay, burst); return; }
-    // Anticipation: the bubble swells and squashes before it goes, so the pop reads as a release.
+    // Anticipation: the bubble swells, squashes and flashes white before it goes, so the pop reads as a release.
+    this.time.delayedCall(delay + 20, () => { if (bubble.active) bubble.setTintFill(0xffffff); });
     this.tweens.add({
       targets: bubble, scaleX: 1.22 * BS, scaleY: 0.82 * BS, duration: 80, delay, ease: 'Quad.easeOut',
       onComplete: burst,
@@ -2854,10 +2858,10 @@ class GameScene extends Phaser.Scene {
   /** A quick ring of shock that grows and fades where a bubble went. */
   spawnPopRing(x, y, color) {
     if (this.reduce) return;
-    const ring = this.add.image(x, y, 'ring').setTint(color).setScale(0.35 * BS).setAlpha(0.9).setDepth(9);
+    const ring = this.add.image(x, y, 'ring').setTint(P.inkN).setScale(0.35 * BS).setAlpha(1).setDepth(9);
     ring.setBlendMode(Phaser.BlendModes.NORMAL);
     this.tweens.add({
-      targets: ring, scale: 1.1 * BS, alpha: 0, duration: 260, ease: 'Quad.easeOut',
+      targets: ring, scale: 1.7 * BS, alpha: 0, duration: 320, ease: 'Quad.easeOut',
       onComplete: () => ring.destroy(),
     });
   }
@@ -2911,7 +2915,7 @@ class GameScene extends Phaser.Scene {
 
   showScorePopup(x, y, text, streak) {
     const level = getStreakLevel(streak);
-    const size = level ? Math.min(level.size - 4, 36) : 22;
+    const size = level ? Math.min(level.size, 44) : 28;
     // A sticker: ink outline, the accent inside on streaks, the ink otherwise.
     y = Math.max(y, GRID_OFFSET_Y + 34);
     const popup = this.add.text(x, y, text,
@@ -3060,6 +3064,10 @@ class GameScene extends Phaser.Scene {
 
   flashHypeBar() {
     if (this.reduce) return;
+    const br = this.boardRect;
+    const bf = this.add.graphics().setDepth(7);
+    bf.lineStyle(7, P.hotN, 1); bf.strokeRoundedRect(br.x - 3, br.y - 3, br.w + 6, br.h + 6, 16);
+    this.tweens.add({ targets: bf, alpha: 0, duration: 520, onComplete: () => bf.destroy() });
     const flash = this.add.graphics();
     flash.lineStyle(5, P.hotN, 1);
     flash.strokeRoundedRect(10, STAGE_Y, VIEW.width - 20, STAGE_H, 14);
