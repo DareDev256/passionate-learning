@@ -256,7 +256,7 @@ class Cast {
     const tex = scene.textures.createCanvas('cast_' + Math.random().toString(36).slice(2, 8), Math.round(w * Z), Math.round(h * Z));
     this.tex = tex; this.ctx = tex.getContext();
     this.img = scene.add.image(x, y, tex.key).setOrigin(0, 0).setScale(1 / Z).setDepth(4);
-    const ground = h - 14;
+    const ground = h - 26;
     this.ground = ground;
     const wear = (P.wear && P.wear.length) ? P.wear : ['hero'];
     this.hero = new StickFigure({ wear, scale: 1.0, name: 'Hero', seed: 1 });
@@ -378,6 +378,19 @@ class Cast {
   }
 
   update(time, delta) {
+    // Idle life: every few seconds one of the crew does a little something, so the stage never freezes.
+    if (!this.reduce && !this.feverOn && !this.panicOn && this.mood === 'idle') {
+      this.idleIn = (this.idleIn === undefined ? 1800 : this.idleIn) - delta;
+      if (this.idleIn <= 0) {
+        this.idleIn = 2200 + Math.random() * 2200;
+        const m = this.members[Math.floor(Math.random() * 4)];
+        const poses = [['wave', 'grin'], ['think', 'smug'], ['shrug', 'happy'], ['cheer', 'grin']];
+        const [p, f] = poses[Math.floor(Math.random() * poses.length)];
+        m.setPose(p, 160); m.setFace(f); m.hop(0.5);
+        this.look = Math.random();
+        setTimeout(() => { if (this.mood === 'idle' && !this.feverOn && !this.panicOn) { m.setPose(m === this.hero || m === this.spark ? 'hips' : 'stand', 220); m.setFace('happy'); } }, 1100);
+      }
+    }
     if (this.revert > 0) {
       this.revert -= delta;
       if (this.revert <= 0 && !this.feverOn && !this.panicOn) this.setIdle();
