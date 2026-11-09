@@ -138,7 +138,7 @@ export function missedKeys(answers: Answer[]): string[] {
 /** XP for a card put right in a fix pass. Smaller than a round's 10: the point is the memory, not the score. */
 export const FIX_XP = 5;
 
-export interface FixResult { save: Save; xpGained: number; correct: number; total: number }
+export interface FixResult { save: Save; xpGained: number; correct: number; total: number; rankBefore: Rank; rankAfter: Rank }
 
 /**
  * Applies a "fix your mistakes" pass. Card memory is reviewed and the review quest is ticked, but unit progress, days played,
@@ -147,6 +147,7 @@ export interface FixResult { save: Save; xpGained: number; correct: number; tota
 export function applyFix(save: Save, unit: string, answers: Answer[], now = new Date(), seconds?: number): FixResult {
   const s: Save = { ...save, cards: { ...save.cards }, quests: { ...save.quests }, events: [...save.events] };
   let xp = 0;
+  const rankBefore = rankOf(s.xp).rank;
   for (const a of answers) {
     s.cards[a.key] = reviewCard(s.cards[a.key], a.correct, now, a.key);
     if (a.correct) xp += FIX_XP;
@@ -155,5 +156,5 @@ export function applyFix(save: Save, unit: string, answers: Answer[], now = new 
   if (s.quests.date !== today(now)) s.quests = freshQuests(now);
   if (answers.length) s.quests.reviewed = true;
   s.events.push({ id: newId(), type: "fix", unit, cards: answers.map((a) => a.key), correct: answers.map((a) => a.correct), durationMs: Math.round((seconds ?? 0) * 1000), clientTs: now.getTime() });
-  return { save: s, xpGained: xp, correct: answers.filter((a) => a.correct).length, total: answers.length };
+  return { save: s, xpGained: xp, correct: answers.filter((a) => a.correct).length, total: answers.length, rankBefore, rankAfter: rankOf(s.xp).rank };
 }

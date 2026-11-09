@@ -3,13 +3,14 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/art/Logo";
 import { Stick } from "@/art/Stick";
 import { GOALS, startFor } from "@/lib/onboarding";
-import type { Goal, Save } from "@/lib/save";
+import { writeSave, type Goal, type Save } from "@/lib/save";
 
 /** The first screen is a card: one question, four answers, and the answer starts the first lesson. Uses Home's save, so skipping shows Home at once. */
 export function Onboarding({ save, update }: { save: Save; update: (next: Save) => void }) {
   const router = useRouter();
   const pick = (goal: Goal) => {
-    update({ ...save, profile: { goal, onboarded: true } });
+    // Written straight to storage and not through Home's state, so Home does not flash its full page before the round opens.
+    writeSave({ ...save, profile: { goal, onboarded: true } });
     const { worldId, unitId } = startFor(goal);
     router.push(`/play/${worldId}/${unitId}/`);
   };

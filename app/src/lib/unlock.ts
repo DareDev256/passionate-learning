@@ -33,7 +33,7 @@ export function unlockMessage(world: World, unitId: string, accuracy: number, to
   const cleared = wasCleared || accuracy >= UNLOCK_AT;
   const line = Math.round(UNLOCK_AT * 100);
   if (cleared) {
-    if (!next) return { kind: "last", text: `That clears the last unit in ${world.title}. Pick another world on the map.` };
+    if (!next) return { kind: "last", text: wasCleared ? `You have already cleared the last unit in ${world.title}. Pick another world when you are ready.` : `That clears the last unit in ${world.title}. Pick another world on the map.` };
     return wasCleared
       ? { kind: "open-already", text: `\u201C${next.title}\u201D is already open. Go when you are ready.` }
       : { kind: "opened", text: `${pct}% opens \u201C${next.title}\u201D. It is ready for you.` };

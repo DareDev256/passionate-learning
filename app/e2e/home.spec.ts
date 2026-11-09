@@ -59,6 +59,7 @@ test("three quests and a chest: a round ticks two, a second round opens the ches
   await page.getByRole("button", { name: "OPEN CHEST" }).click();
   await expect(page.getByText("Chest opened.")).toBeVisible();
   expect((await readSave(page)).tokens).toBe(tokensBefore + 5);
+  await expect(page.getByTitle("Arcade tokens")).toContainText(String(tokensBefore + 5)); // the top bar moves too
   await expect(page.getByRole("button", { name: "OPEN CHEST" })).toHaveCount(0);
   await page.reload();
   await expect(page.getByText("Chest opened.")).toBeVisible();

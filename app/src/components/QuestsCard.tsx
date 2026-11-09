@@ -1,6 +1,6 @@
 "use client";
 import { SystemWindow } from "./SystemWindow";
-import { useSave } from "@/lib/useSave";
+import type { Save } from "@/lib/save";
 import { CHEST_TOKENS, openChest, questsOf } from "@/lib/quests";
 
 /** A hand-drawn chest: shut, ready (the lid hops), or open with a glow. */
@@ -23,8 +23,8 @@ function Chest({ state }: { state: "shut" | "ready" | "open" }) {
   );
 }
 
-export function QuestsCard() {
-  const { save, update, ready } = useSave();
+/** Takes Home's save and update, so opening the chest also moves the token chip in the top bar. */
+export function QuestsCard({ save, update, ready }: { save: Save; update: (next: Save) => void; ready: boolean }) {
   const q = questsOf(save);
   const rows: { done: boolean; text: React.ReactNode }[] = [
     { done: q.round, text: <>Finish 1 round <b>(that is a whole day)</b></> },

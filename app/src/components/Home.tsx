@@ -48,7 +48,7 @@ function guideLine(save: Save, due: number) {
   const quest = questsOf(save);
   if (save.days.length === 0) return <>Ready when you are. One round is <em>60 seconds</em>. That&apos;s the whole ask.</>;
   if (quest.allDone) return <>Daily quest <em>cleared</em>. Everything else today is bonus. Go touch grass, or keep going.</>;
-  if (due > 0) return <><em>{due} card{due === 1 ? "" : "s"}</em> about to slip out of your brain. One round saves {due === 1 ? "it" : "them"}.</>;
+  if (due > 0) return <><em>{due} card{due === 1 ? " is" : "s are"}</em> ready for review. One round brings {due === 1 ? "it" : "them"} back.</>;
   if (quest.round) return <>Round done today. That counts. A missed day <em>resets nothing</em> here.</>;
   return <>Back again. Pick a world. Or don&apos;t. I&apos;m a <em>drawing</em>.</>;
 }
@@ -90,7 +90,7 @@ export function Home() {
       </div>
 
       <HomePath save={save} />
-      <QuestsCard />
+      <QuestsCard save={save} update={update} ready={ready} />
 
       <nav className="home-links" aria-label="More">
         <Link className="btn ghost" href="/worlds/">ALL WORLDS</Link>

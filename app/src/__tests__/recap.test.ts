@@ -37,6 +37,12 @@ describe("unlockMessage", () => {
     const last = prompt.units[prompt.units.length - 1];
     expect(unlockMessage(prompt, last.id, 0.9, 8, false).kind).toBe("last");
   });
+  it("replaying an already-cleared last unit does not claim it was just cleared", () => {
+    const last = prompt.units[prompt.units.length - 1];
+    const m = unlockMessage(prompt, last.id, 0.2, 8, true);
+    expect(m.kind).toBe("last");
+    expect(m.text).toContain("already cleared");
+  });
   it("the last unit under the line says what clearing it needs", () => {
     const last = prompt.units[prompt.units.length - 1];
     const m = unlockMessage(prompt, last.id, 0.5, 8, false);
@@ -87,6 +93,11 @@ describe("missedKeys and applyFix", () => {
     const g = applyRound(due, prompt, first, answers, NOW).save; // an unanswered due card keeps the review quest open
     expect(g.quests.reviewed).toBe(false);
     expect(applyFix(g, "prompt/say-it", fixes, NOW).save.quests.reviewed).toBe(true);
+  });
+  it("a fix pass reports a rank-up when its XP crosses the line", () => {
+    const near: Save = { ...played, xp: 145 };
+    const f = applyFix(near, "prompt/say-it", fixes, NOW);
+    expect([f.rankBefore, f.rankAfter]).toEqual(["E", "D"]);
   });
   it("a wrong answer in a fix pass is still recorded, and pays nothing", () => {
     const f = applyFix(played, "prompt/say-it", fixes.map((a) => ({ ...a, correct: false })), NOW);

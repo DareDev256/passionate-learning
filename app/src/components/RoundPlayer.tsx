@@ -320,6 +320,7 @@ function FixRecap({ world, unitId, fix, save }: { world: NonNullable<ReturnType<
       <div className="recap-hero"><Stick pose={all ? "cheer" : "point"} face={all ? "cool" : "grin"} size={110} /></div>
       <h1 className="recap-title">{all ? "FIXED." : "GOOD TRY."}</h1>
       <p className="recap-sub">{all ? "Every one of them is right now. They will come back later to make sure it stuck." : `${fix.correct} of ${fix.total} put right. The rest will come back, and that is how they stick.`}</p>
+      {fix.rankAfter !== fix.rankBefore && <SystemWindow title={`RANK UP: ${fix.rankBefore} → ${fix.rankAfter}`} tone="gold">You have been promoted to <b>Rank {fix.rankAfter}</b>. Fixing your mistakes counts.</SystemWindow>}
       <div className="stats">
         <div className="stat"><b>{fix.correct}/{fix.total}</b><span>FIXED</span></div>
         <div className="stat"><b>+{fix.xpGained}</b><span>XP</span></div>
