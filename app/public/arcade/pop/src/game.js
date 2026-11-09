@@ -1559,7 +1559,7 @@ class GameScene extends Phaser.Scene {
     this.maxHints = this.gameMode === 'zen' ? Infinity : 3;
     const hintBtn = createToolbarBtn(this, {
       x: hintBtnX, y: tbY, size: tbSize,
-      iconFn: (s, bx, by) => Icons.hint(s, bx, by, 20, P.hotN),
+      iconFn: (s, bx, by) => Icons.hint(s, bx, by, 20, P.inkN),
       callback: () => this.triggerHint(),
     });
     this.hintBtnBg = hintBtn.bg;
@@ -1948,7 +1948,7 @@ class GameScene extends Phaser.Scene {
    */
   showAchievementToast(ach, delay = 0) {
     const { width } = VIEW;
-    const toastY = GRID_OFFSET_Y + 230;
+    const toastY = GRID_OFFSET_Y + 446;
     const toastW = Math.min(width - 30, 280);
     const toastX = width / 2;
 
@@ -1966,12 +1966,12 @@ class GameScene extends Phaser.Scene {
     container.add(bg);
 
     // Star icon (left side)
-    const star = Icons.star(this, -toastW / 2 + 20, 0, 14, borderColor);
+    const star = Icons.star(this, -toastW / 2 + 20, 0, 14, P.inkN);
     star.setDepth(71);
     container.add(star);
 
     // Achievement text
-    const label = this.add.text(4, -1, ach.name, textStyle('badge', { fontSize: '14px', color: ach.color })).setOrigin(0.5);
+    const label = this.add.text(4, -1, ach.name, textStyle('badge', { fontSize: '14px', color: P.ink, stroke: '', strokeThickness: 0 })).setOrigin(0.5);
     container.add(label);
 
     // Slide in + fade
