@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 (2026-11-09): themes and the What's Poppin glow-up
+
+- "Cap or facts?" is now "True or false?". The buttons read TRUE and FALSE, answers are labelled TRUE or FALSE, and the world is called Fact Check. Your saves are untouched.
+- Tokens now buy themes. The arcade has a theme shop: Notebook is free, then Blackout (6 tokens), Redline (10), Greenroom (12), Ultraviolet (15) and Bubblegum (18). A theme changes the whole app, your stickman's outfit and What's Poppin. Buy once, keep forever, switch any time. Tokens can never go below zero. No real money is involved.
+- What's Poppin is rebuilt to match the app: your stickman crew (Hero, Pro, Bolt and Spark) stands on a stage above the board and reacts to pops, streaks, power-ups, chains, fever, the last ten seconds and game over. Doodle bubbles on your theme's colours, sharper on phone screens, a layout with nothing overlapping, snappier drops and refills, hit-stop and a fever takeover, and it respects Reduce Motion.
+- The anime characters and slang in the game are gone.
+
 ## 1.4.0 (2026-11-09): local progression
 
 Everything here is local and offline: no accounts, no network. Phase 2 of the App Store release.

@@ -25,7 +25,7 @@ It's built in the open. **A new world is one data file**, so anyone who just lea
 | Speed Keys | Typing tech words at full speed | 16 |
 | *Deepfake Detector, Scam Radar, Code Dojo, AI at Work* | **coming soon: help build them** | |
 
-Plus an arcade break (What's Poppin) you pay for with tokens earned from rounds.
+Plus an arcade break (What's Poppin) you pay for with tokens earned from rounds. Tokens also buy themes (Notebook, Blackout, Redline, Greenroom, Ultraviolet, Bubblegum) that restyle the whole app, your stickman and the game. v1.5.0.
 
 **Progress, all on your device:** one question on first launch picks your first world; Home is one path with the next unit lit; three daily quests and a token chest (one round already counts as your day, and a missed day resets nothing); a recap that lists the cards you missed, says what unlocks next and lets you fix your mistakes; wrong answers say when the card comes back; a profile with rank, days played, accuracy per world and achievements. The save is versioned (`passionate-learning:v2`, an append-only event log) and upgrades an older save once, keeping a backup.
 
