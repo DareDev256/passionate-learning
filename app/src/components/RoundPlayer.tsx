@@ -2,18 +2,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getUnit, getWorld } from "@/content";
+import { findCard, getUnit, getWorld } from "@/content";
 import { Stick } from "@/art/Stick";
 import { MemeCard } from "@/art/Meme";
-import { CardView, correctText } from "./CardView";
+import { CardView, cardPrompt, correctText } from "./CardView";
 import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
-import { applyRound, buildRound, grade, type Answer, type Response, type RoundResult, BASE_XP, TARGET_SECONDS, SPEED_BONUS } from "@/lib/round";
+import { applyFix, applyRound, buildRound, grade, missedKeys, type Answer, type FixResult, type Response, type RoundCard, type RoundResult, BASE_XP, FIX_XP, TARGET_SECONDS, SPEED_BONUS } from "@/lib/round";
+import { dueLabel } from "@/lib/due";
 import { LockedScreen } from "./LockedScreen";
 import { ConfirmSheet } from "./ConfirmSheet";
 import { clearInProgress, loadInProgress, saveInProgress } from "@/lib/roundResume";
-import { blockingUnit } from "@/lib/unlock";
-import { isCleared, levelOf, recallMultiplier, unitKey } from "@/lib/save";
+import { blockingUnit, unlockMessage } from "@/lib/unlock";
+import { isCleared, levelOf, recallMultiplier, reviewCard, unitKey, type Save } from "@/lib/save";
+import { questsOf } from "@/lib/quests";
 import { haptic } from "@/lib/native";
 import { playCorrect, playIncorrect, playCelebration, playAchievement } from "@/lib/soundEngine";
 import type { Face, Pose } from "@/content/types";
@@ -51,6 +53,11 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   const [result, setResult] = useState<RoundResult | null>(null);
   const [roundXp, setRoundXp] = useState(stored?.roundXp ?? 0);
   const [confirming, setConfirming] = useState(false);
+  // "Fix your mistakes": a short pass over the cards missed in the round just finished. It is practice on top of the round.
+  const [fixCards, setFixCards] = useState<RoundCard[] | null>(null);
+  const [fixResult, setFixResult] = useState<FixResult | null>(null);
+  const wasCleared = useRef(false);
+  const [dueNote, setDueNote] = useState<string | null>(null);
   // Thinking time only: the clock runs while a card is waiting for an answer, never while you read the feedback.
   const spent = useRef(stored?.spentMs ?? 0);
   const askStart = useRef<number | null>(null);
@@ -59,7 +66,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     const id = setInterval(() => setElapsedMs(spent.current + (askStart.current !== null ? performance.now() - askStart.current : 0)), 200);
     return () => clearInterval(id);
   }, []);
-  useEffect(() => { if (ready && !done && !result) askStart.current = performance.now(); }, [ready, idx, done, result]);
+  useEffect(() => { if (ready && !done && (!result || fixCards)) askStart.current = performance.now(); }, [ready, idx, done, result, fixCards]);
 
   // A stored round that no longer matches the rebuilt one (content changed, or it is longer than the round) starts fresh.
   // One that was answered to the last card but never finished is applied now, through the same finish() as a normal round.
@@ -84,7 +91,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   useEffect(() => { if (blocker && loadInProgress(worldId, unitId)) clearInProgress(); }, [blocker, worldId, unitId]);
 
   const live = useRef({ seed, answers, combo, roundXp, active: false });
-  useEffect(() => { live.current = { seed, answers, combo, roundXp, active: ready && !blocker && !result && round.length > 0 }; });
+  useEffect(() => { live.current = { seed, answers, combo, roundXp, active: ready && !blocker && !result && !fixCards && round.length > 0 }; });
   function persist(p: Partial<typeof live.current> = {}) {
     const l = { ...live.current, ...p };
     if (!l.active || !l.answers.length) return;
@@ -120,17 +127,20 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
 
   function leave() { clearInProgress(); router.push(`/w/${world.id}/`); }
 
-  const rc = round[idx];
+  const cards = fixCards ?? round;
+  const rc = cards[idx];
   const levelBefore = levelOf(save.xp);
 
   function answer(r: Response) {
     if (!rc || done) return;
     const ok = grade(rc.card, r);
     if (askStart.current !== null) { spent.current += performance.now() - askStart.current; askStart.current = null; }
-    const newXp = ok ? roundXp + BASE_XP * recallMultiplier(save.cards[rc.key]) : roundXp;
+    const newXp = ok ? roundXp + (fixCards ? FIX_XP : BASE_XP * recallMultiplier(save.cards[rc.key])) : roundXp;
     const newAnswers = [...answers, { key: rc.key, correct: ok, review: rc.review }];
     const newCombo = ok ? combo + 1 : 0;
     setRoundXp(newXp);
+    // When a wrong card comes back, from the same seeded schedule the save will store when the round ends.
+    setDueNote(ok ? null : dueLabel(new Date(reviewCard(save.cards[rc.key], false, new Date(), rc.key).due)));
     setDone({ r, ok });
     setCombo(newCombo);
     setAnswers(newAnswers);
@@ -139,7 +149,24 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     void haptic(ok ? "success" : "error", save.settings.haptics);
   }
 
+  function startFix() {
+    const keys = missedKeys(answers);
+    const list = keys.map((k) => findCard(k)).filter((x): x is NonNullable<typeof x> => !!x).map(({ key, card, world: w }) => ({ key, card, worldId: w.id, review: false }));
+    if (!list.length) return;
+    spent.current = 0; askStart.current = null;
+    setFixCards(list); setFixResult(null); setResult(null);
+    setIdx(0); setAnswers([]); setDone(null); setCombo(0); setRoundXp(0); setDueNote(null);
+  }
+
   function finish(finalAnswers: Answer[]) {
+    if (fixCards) {
+      const fx = applyFix(save, unitKey(world.id, unit.id), finalAnswers, new Date(), spent.current / 1000);
+      update(fx.save);
+      setFixResult(fx);
+      if (save.settings.sound) playCelebration();
+      return;
+    }
+    wasCleared.current = isCleared(save.units[unitKey(world.id, unit.id)]);
     const res = applyRound(save, world, unit, finalAnswers, new Date(), spent.current / 1000);
     update(res.save);
     clearInProgress();
@@ -148,7 +175,7 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   }
 
   function next() {
-    if (idx + 1 < round.length) { setIdx(idx + 1); setDone(null); return; }
+    if (idx + 1 < cards.length) { setIdx(idx + 1); setDone(null); setDueNote(null); return; }
     finish(answers);
   }
 
@@ -160,9 +187,10 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
 
   if (blocker) return <LockedScreen world={world} unit={unit} blocker={blocker} />;
   if (!ready || !rc) return <main className="round"><p className="bubble">Shuffling cards...</p></main>;
-  if (result) return <Recap world={world} unitId={unitId} result={result} levelBefore={levelBefore} />;
+  if (fixResult) return <FixRecap world={world} unitId={unitId} fix={fixResult} save={save} />;
+  if (result && !fixCards) return <Recap world={world} unitId={unitId} result={result} levelBefore={levelBefore} answers={answers} wasCleared={wasCleared.current} onFix={startFix} />;
 
-  const mult = done?.ok ? recallMultiplier(save.cards[rc.key]) : 1;
+  const mult = done?.ok && !fixCards ? recallMultiplier(save.cards[rc.key]) : 1;
   const h = hash(rc.key);
   const react: { pose: Pose; face: Face } = !done ? { pose: "think", face: "happy" } : done.ok ? { pose: combo >= 3 ? "cheer" : "point", face: combo >= 3 ? "cool" : "grin" } : { pose: h % 2 ? "facepalm" : "shrug", face: h % 2 ? "spiral" : "shock" };
 
@@ -170,13 +198,13 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
     <main className="round" ref={mainRef} style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
       <div className="round-top">
         <button type="button" className="x" aria-label="Quit round" onClick={() => (answers.length ? setConfirming(true) : leave())}>✕</button>
-        <div className="segs" aria-label={`Card ${idx + 1} of ${round.length}`}>
-          {round.map((_, i) => <i key={i} className={i < answers.length ? (answers[i].correct ? "ok" : "no") : i === idx ? "now" : ""} />)}
+        <div className="segs" aria-label={`Card ${idx + 1} of ${cards.length}`}>
+          {cards.map((_, i) => <i key={i} className={i < answers.length ? (answers[i].correct ? "ok" : "no") : i === idx ? "now" : ""} />)}
         </div>
         <span className={`xp-chip ${done?.ok ? "bump" : ""}`} key={roundXp} aria-label={`${roundXp} XP this round`}>+<CountUp to={roundXp} ms={450} /></span>
-        <span className="combo" aria-label={`Combo ${combo}`}>{combo >= 2 ? <span className="flame" style={{ fontSize: `${Math.min(16 + combo * 3, 30)}px` }}>🔥<b>{combo}</b></span> : <>{idx + 1}/{round.length}</>}</span>
+        <span className="combo" aria-label={`Combo ${combo}`}>{combo >= 2 ? <span className="flame" style={{ fontSize: `${Math.min(16 + combo * 3, 30)}px` }}>🔥<b>{combo}</b></span> : <>{idx + 1}/{cards.length}</>}</span>
       </div>
-      <Timer spentMs={elapsedMs} />
+      {fixCards ? <p className="fix-banner">FIX YOUR MISTAKES: no timer, no pressure.</p> : <Timer spentMs={elapsedMs} />}
 
       <div className="kicker">
         {world.title}{rc.review && <span className="rev">REVIEW</span>}
@@ -197,12 +225,13 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
           <div className="drawer-in">
             <div>
               <div className="verdict">{done.ok ? pick(YES, h) : pick(NO, h)}</div>
-              {done.ok && <div className="xp-pop">+<CountUp to={BASE_XP * mult} /> XP{mult > 1 ? `  ·  ${mult}x RECALL BONUS` : ""}{combo >= 3 ? `  ·  COMBO x${combo}` : ""}</div>}
+              {done.ok && <div className="xp-pop">+<CountUp to={fixCards ? FIX_XP : BASE_XP * mult} /> XP{mult > 1 ? `  ·  ${mult}x RECALL BONUS` : ""}{combo >= 3 ? `  ·  COMBO x${combo}` : ""}</div>}
               {!done.ok && <div className="answer-was">ANSWER: {correctText(rc.card)}</div>}
               <p className="why">{rc.card.why}</p>
+              {!done.ok && dueNote && <p className="again">You will see this again {dueNote}.</p>}
             </div>
             {rc.card.meme && <MemeCard meme={rc.card.meme} />}
-            <button className="btn block ink" onClick={next} autoFocus>{idx + 1 < round.length ? "NEXT →" : "FINISH ROUND"}</button>
+            <button className="btn block ink" onClick={next} autoFocus>{idx + 1 < cards.length ? "NEXT →" : fixCards ? "FINISH" : "FINISH ROUND"}</button>
           </div>
         </section>
       )}
@@ -211,15 +240,17 @@ export function RoundPlayer({ worldId, unitId }: { worldId: string; unitId: stri
   );
 }
 
-function Recap({ world, unitId, result, levelBefore }: { world: NonNullable<ReturnType<typeof getWorld>>; unitId: string; result: RoundResult; levelBefore: number }) {
+function Recap({ world, unitId, result, levelBefore, answers, wasCleared, onFix }: { world: NonNullable<ReturnType<typeof getWorld>>; unitId: string; result: RoundResult; levelBefore: number; answers: Answer[]; wasCleared: boolean; onFix: () => void }) {
   const pct = Math.round(result.accuracy * 100);
   const i = world.units.findIndex((u) => u.id === unitId);
   const nextUnit = world.units[i + 1];
   const opened = isCleared(result.save.units[unitKey(world.id, unitId)]);
   const leveled = levelOf(result.save.xp) > levelBefore;
   const title = pct === 100 ? "PERFECT." : pct >= 70 ? "CLEARED." : "ROUND DONE.";
-  const sub = pct === 100 ? "Flawless. The System noticed." : pct >= 70 ? "That counts as your whole day. Anything else is bonus." : "That still counts as a day. Replay it now while it's fresh and watch the number jump.";
+  const sub = pct === 100 ? "Flawless. The System noticed." : pct >= 70 ? "That counts as your whole day. Anything else is bonus." : "That still counts as a day. Fix the ones you missed while they are fresh, or replay the unit.";
   const q = result.questDone;
+  const unlock = unlockMessage(world, unitId, result.accuracy, result.total, wasCleared);
+  const missed = missedKeys(answers).map((k) => findCard(k)).filter((x): x is NonNullable<typeof x> => !!x);
   const R = 34, C = 2 * Math.PI * R;
   return (
     <main className="recap" style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
@@ -238,6 +269,7 @@ function Recap({ world, unitId, result, levelBefore }: { world: NonNullable<Retu
         <div className="stat"><b>+<CountUp to={result.xpGained} ms={900} /></b><span>XP</span></div>
         <div className="stat"><b>+{result.tokensGained}</b><span>🎟 TOKENS</span></div>
       </div>
+      <p className={`unlock-line unlock-${unlock.kind}`} data-testid="unlock-line"><span className="unlock-ic" aria-hidden="true">{unlock.kind === "need" ? "🔒" : "🔓"}</span>{unlock.text}</p>
       {result.rankAfter !== result.rankBefore && (
         <SystemWindow title={`RANK UP: ${result.rankBefore} → ${result.rankAfter}`} tone="gold">You have been promoted to <b>Rank {result.rankAfter}</b>. The System is watching. Keep going.</SystemWindow>
       )}
@@ -248,15 +280,55 @@ function Recap({ world, unitId, result, levelBefore }: { world: NonNullable<Retu
       {(q.round || q.review || q.second) && (
         <SystemWindow title="QUEST PROGRESS">
           {q.round && <div>✓ Finish 1 round. <b>Today counts.</b></div>}
-          {q.review && <div>✓ Answer a review card.</div>}
-          {q.second && <div>✓ Second round.</div>}
+          {q.review && <div>✓ Clear a review.</div>}
+          {q.second && <div>✓ Play a second round.</div>}
+          {questsOf(result.save).allDone && !questsOf(result.save).chestOpened && <div>The chest is ready on Home.</div>}
         </SystemWindow>
       )}
+      {missed.length > 0 && (
+        <section className="missed" aria-label="Cards you missed">
+          <h2 className="h2">Missed <small>{missed.length} card{missed.length === 1 ? "" : "s"}</small></h2>
+          <ul>
+            {missed.map(({ key, card }) => (
+              <li key={key} className="missed-card">
+                <span className="missed-q">{cardPrompt(card)}</span>
+                <span className="missed-a">ANSWER: {correctText(card)}</span>
+                <span className="missed-why">{card.why}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <div className="recap-actions">
+        {missed.length > 0 && <button type="button" className="btn block ink" onClick={onFix}>🛠 FIX YOUR MISTAKES</button>}
         {opened && nextUnit ? <Link className="btn block" href={`/play/${world.id}/${nextUnit.id}/`}>{"\u25B6\uFE0E"} NEXT: {nextUnit.title}</Link> : null}
-        <button className={`btn block ${opened && nextUnit ? "ghost" : ""}`} onClick={() => location.reload()}>↻ {pct >= 70 ? "AGAIN" : "REPLAY IT NOW"}</button>
+        <button className={`btn block ${(opened && nextUnit) || missed.length ? "ghost" : ""}`} onClick={() => location.reload()}>↻ {pct >= 70 ? "AGAIN" : "REPLAY IT NOW"}</button>
         <Link className="btn block ghost" href="/arcade/">🎟 ARCADE BREAK</Link>
-        <Link className="btn block ghost" href="/">MAP</Link>
+        <Link className="btn block ghost" href="/">HOME</Link>
+      </div>
+    </main>
+  );
+}
+
+/** The short screen after a fix pass. */
+function FixRecap({ world, unitId, fix, save }: { world: NonNullable<ReturnType<typeof getWorld>>; unitId: string; fix: FixResult; save: Save }) {
+  const nextUnit = world.units[world.units.findIndex((u) => u.id === unitId) + 1];
+  const nextOpen = !!nextUnit && isCleared(save.units[unitKey(world.id, unitId)]);
+  const all = fix.correct === fix.total;
+  return (
+    <main className="recap" style={{ ["--wa" as string]: world.accent } as React.CSSProperties}>
+      <div className="recap-hero"><Stick pose={all ? "cheer" : "point"} face={all ? "cool" : "grin"} size={110} /></div>
+      <h1 className="recap-title">{all ? "FIXED." : "GOOD TRY."}</h1>
+      <p className="recap-sub">{all ? "Every one of them is right now. They will come back later to make sure it stuck." : `${fix.correct} of ${fix.total} put right. The rest will come back, and that is how they stick.`}</p>
+      <div className="stats">
+        <div className="stat"><b>{fix.correct}/{fix.total}</b><span>FIXED</span></div>
+        <div className="stat"><b>+{fix.xpGained}</b><span>XP</span></div>
+        <div className="stat"><b>{levelOf(save.xp)}</b><span>LEVEL</span></div>
+      </div>
+      <div className="recap-actions">
+        {nextOpen ? <Link className="btn block" href={`/play/${world.id}/${nextUnit.id}/`}>{"\u25B6\uFE0E"} NEXT: {nextUnit.title}</Link> : null}
+        <Link className={`btn block ${nextOpen ? "ghost" : ""}`} href={`/w/${world.id}/`}>BACK TO {world.title.toUpperCase()}</Link>
+        <Link className="btn block ghost" href="/">HOME</Link>
       </div>
     </main>
   );

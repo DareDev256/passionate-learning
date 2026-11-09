@@ -30,3 +30,18 @@ export async function answerFirstCard(page: Page) {
   }
   await page.locator(".drawer").waitFor();
 }
+
+export const SAVE_V2 = "passionate-learning:v2";
+
+/** The saved v2 progress, parsed. */
+export async function readSave(page: Page) {
+  return page.evaluate((k) => JSON.parse(localStorage.getItem(k) || "null"), SAVE_V2);
+}
+
+/** Boots with a v2 save the first-launch card will not interrupt. `patch` merges over a minimal save. */
+export async function seedSave(page: Page, patch: Record<string, unknown> = {}) {
+  await page.evaluate(([k, p]) => {
+    localStorage.clear();
+    localStorage.setItem(k as string, JSON.stringify({ v: 2, profile: { goal: null, onboarded: true }, ...(p as object) }));
+  }, [SAVE_V2, patch] as const);
+}

@@ -128,6 +128,15 @@ function TypeCard({ card, done, onAnswer }: { card: Extract<Card, { type: "type"
 }
 
 /** The correct answer as plain text, for the feedback drawer after a miss. */
+/** The question a card asked, as one line of text. */
+export function cardPrompt(card: Card): string {
+  switch (card.type) {
+    case "cap": return card.claim;
+    case "predict": return card.context;
+    default: return card.prompt;
+  }
+}
+
 export function correctText(card: Card): string {
   switch (card.type) {
     case "choice": return card.options[card.answer];
