@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { StickDefs } from "@/art/Stick";
+import { ThemeClass } from "@/components/ThemeClass";
 import { MotionClass } from "@/components/MotionClass";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <ServiceWorker />
         <MotionClass />
+        <ThemeClass />
       </body>
     </html>
   );

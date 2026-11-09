@@ -5,7 +5,7 @@ import { CHEST_TOKENS, openChest, questsOf } from "@/lib/quests";
 
 /** A hand-drawn chest: shut, ready (the lid hops), or open with a glow. */
 function Chest({ state }: { state: "shut" | "ready" | "open" }) {
-  const ink = "#0a0a0a";
+  const ink = "var(--ink)";
   return (
     <svg className={`chest chest-${state}`} viewBox="0 0 120 100" width="96" height="80" aria-hidden="true" focusable="false">
       {state === "open" && <circle cx="60" cy="44" r="34" fill="#ffc531" opacity="0.35" className="chest-glow" />}

@@ -11,8 +11,8 @@ import { totals, worldAccuracy } from "@/lib/stats";
 function Badge({ earned }: { earned: boolean }) {
   return (
     <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false" className={`badge-ic ${earned ? "on" : "off"}`}>
-      <circle cx="24" cy="24" r="20" fill={earned ? "#ffc531" : "none"} stroke="#0a0a0a" strokeWidth="3.5" strokeDasharray={earned ? undefined : "3 6"} strokeLinecap="round" />
-      {earned && <path d="M24 10 l4.2 8.6 9.4 1.3 -6.8 6.6 1.6 9.4 L24 31.5 l-8.4 4.4 1.6 -9.4 -6.8 -6.6 9.4 -1.3 Z" fill="#ff3b1f" stroke="#0a0a0a" strokeWidth="2.5" strokeLinejoin="round" />}
+      <circle cx="24" cy="24" r="20" fill={earned ? "#ffc531" : "none"} stroke="var(--ink)" strokeWidth="3.5" strokeDasharray={earned ? undefined : "3 6"} strokeLinecap="round" />
+      {earned && <path d="M24 10 l4.2 8.6 9.4 1.3 -6.8 6.6 1.6 9.4 L24 31.5 l-8.4 4.4 1.6 -9.4 -6.8 -6.6 9.4 -1.3 Z" fill="#ff3b1f" stroke="var(--ink)" strokeWidth="2.5" strokeLinejoin="round" />}
     </svg>
   );
 }
