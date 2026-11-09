@@ -20,13 +20,13 @@ import { haptic } from "@/lib/native";
 import { playCorrect, playIncorrect, playCelebration, playAchievement } from "@/lib/soundEngine";
 import type { Face, Pose } from "@/content/types";
 
-const YES = ["FACTS.", "Clean.", "Big brain.", "That's it.", "Too easy.", "Locked in."];
+const YES = ["Right.", "Clean.", "Big brain.", "That's it.", "Too easy.", "Locked in."];
 const NO = ["Not quite.", "The AI got you.", "Nope. Now you know.", "Close. Not it.", "Plot twist."];
 const HMM: Record<string, string[]> = {
   choice: ["Take your time. Or don't.", "Trust your gut.", "One of these is the move."],
   cap: ["Sounds legit... or does it?", "Read it twice.", "Your call, detective."],
   predict: ["Think like the machine.", "What would the internet say next?", "Most likely, not most interesting."],
-  spot: ["One of these is made up.", "Read every line. The fake hides.", "Spot the cap."],
+  spot: ["One of these is made up.", "Read every line. The fake hides.", "Spot the fake."],
   order: ["First things first.", "Tap them in order.", "Steps, not vibes."],
   type: ["Type it out. Spelling is chill.", "You know this one.", "Caps don't matter."],
 };

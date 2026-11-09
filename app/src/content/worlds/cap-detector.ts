@@ -2,7 +2,7 @@ import type { World } from "../types";
 
 export const capDetector: World = {
   id: "cap",
-  title: "Cap Detector",
+  title: "Fact Check",
   tagline: "Catch AI when it makes things up.",
   accent: "#e0a100",
   guide: { pose: "hips", face: "smug", wear: ["hero", "glasses"] },
@@ -11,7 +11,7 @@ export const capDetector: World = {
   units: [
     {
       id: "cap-or-facts",
-      title: "Cap or facts?",
+      title: "True or false?",
       blurb: "The AI said it. Is it true?",
       cards: [
         {
@@ -20,7 +20,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "Water boils at a lower temperature on top of a high mountain than at sea level.",
           isCap: false,
-          why: "Facts. Lower air pressure up high means water boils below 100°C. Real science, real answer.",
+          why: "True. Lower air pressure up high means water boils below 100°C. Real science, real answer.",
         },
         {
           id: "cd-002",
@@ -28,7 +28,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "The Great Wall of China is easy to see from the Moon with the naked eye.",
           isCap: true,
-          why: "Cap. A very popular myth. The wall is long but far too narrow to see from the Moon.",
+          why: "False. A very popular myth. The wall is long but far too narrow to see from the Moon.",
           meme: { kind: "drake", no: "it said so confidently", yes: "it said so AND a source backs it up" },
         },
         {
@@ -37,7 +37,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "Octopuses have three hearts.",
           isCap: false,
-          why: "Facts. Two pump blood to the gills, one to the rest of the body. Wild but true.",
+          why: "True. Two pump blood to the gills, one to the rest of the body. Wild but true.",
         },
         {
           id: "cd-004",
@@ -45,7 +45,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "Goldfish only have a 3-second memory.",
           isCap: true,
-          why: "Cap. Studies show goldfish can remember things for months. The 3-second thing is a myth the internet loves.",
+          why: "False. Studies show goldfish can remember things for months. The 3-second thing is a myth the internet loves.",
         },
         {
           id: "cd-005",
@@ -53,7 +53,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "Bananas are berries, but strawberries are not, botanically speaking.",
           isCap: false,
-          why: "Facts. Botany is weird. Sounds fake, is real, which is exactly why you check.",
+          why: "True. Botany is weird. Sounds fake, is real, which is exactly why you check.",
         },
         {
           id: "cd-006",
@@ -61,7 +61,7 @@ export const capDetector: World = {
           source: "ChatBot said",
           claim: "Lightning never strikes the same place twice.",
           isCap: true,
-          why: "Cap. Tall buildings get hit many times a year. A saying is not a fact.",
+          why: "False. Tall buildings get hit many times a year. A saying is not a fact.",
         },
       ],
     },
@@ -113,7 +113,7 @@ export const capDetector: World = {
         {
           id: "cd-104",
           type: "spot",
-          prompt: "Travel tips from the AI. Which one is cap?",
+          prompt: "Travel tips from the AI. Which one is false?",
           sentences: [
             "Toronto is in the province of Ontario.",
             "The CN Tower is in downtown Toronto.",
@@ -159,7 +159,7 @@ export const capDetector: World = {
           type: "cap",
           claim: "If an AI gives a link, the link must lead to a real page.",
           isCap: true,
-          why: "Cap. AI can generate links that look real and go nowhere. Click before you cite.",
+          why: "False. AI can generate links that look real and go nowhere. Click before you cite.",
         },
         {
           id: "cd-205",

@@ -33,11 +33,11 @@ export function CardView({ card, done, onAnswer, seed }: Props) {
       const cls = (isCapBtn: boolean) => (done ? (card.isCap === isCapBtn ? "right" : said === isCapBtn ? "wrong" : "") : "");
       return (
         <>
-          <h1 className="prompt">Cap or facts?</h1>
+          <h1 className="prompt">True or false?</h1>
           <p className="claim">{card.source && <span className="src">{card.source.toUpperCase()}</span>}&ldquo;{card.claim}&rdquo;</p>
-          <div className="opt-row" role="group" aria-label="Cap or facts">
-            <button className={`opt cap-btn ${cls(true)}`} disabled={!!done} onClick={() => onAnswer({ type: "cap", saysCap: true })}>🧢 CAP</button>
-            <button className={`opt cap-btn ${cls(false)}`} disabled={!!done} onClick={() => onAnswer({ type: "cap", saysCap: false })}>✅ FACTS</button>
+          <div className="opt-row" role="group" aria-label="True or false">
+            <button className={`opt cap-btn ${cls(false)}`} disabled={!!done} onClick={() => onAnswer({ type: "cap", saysCap: false })}>TRUE</button>
+            <button className={`opt cap-btn ${cls(true)}`} disabled={!!done} onClick={() => onAnswer({ type: "cap", saysCap: true })}>FALSE</button>
           </div>
         </>
       );
@@ -140,7 +140,7 @@ export function cardPrompt(card: Card): string {
 export function correctText(card: Card): string {
   switch (card.type) {
     case "choice": return card.options[card.answer];
-    case "cap": return card.isCap ? "CAP" : "FACTS";
+    case "cap": return card.isCap ? "FALSE" : "TRUE";
     case "predict": return card.options.reduce((b, o) => (o.p > b.p ? o : b)).token;
     case "spot": return card.sentences[card.answer];
     case "order": return card.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");

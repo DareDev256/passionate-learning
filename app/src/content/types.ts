@@ -32,7 +32,7 @@ export interface ChoiceCard extends CardBase {
   answer: number;
 }
 
-/** Is this AI claim cap (made up) or facts? */
+/** Is this AI claim false (made up) or true? Internal names stay `cap` and `isCap` so saves keep working. */
 export interface CapCard extends CardBase {
   type: "cap";
   claim: string;

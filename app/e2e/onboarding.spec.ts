@@ -37,7 +37,7 @@ test("after answering, going home never shows the question again, and the goal w
   await page.waitForURL(/\/play\/cap\//);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "What brought you here?" })).toHaveCount(0);
-  await expect(page.locator(".hp-now")).toContainText("Cap Detector");
+  await expect(page.locator(".hp-now")).toContainText("Fact Check");
 });
 
 test("Show me around first skips the question and never asks again", async ({ page }) => {

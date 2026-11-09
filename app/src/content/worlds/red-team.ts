@@ -28,7 +28,7 @@ export const redTeam: World = {
           type: "cap",
           claim: "An AI can't be tricked by text hidden inside a document it's asked to read.",
           isCap: true,
-          why: "Cap. Hidden or sneaky text in emails, PDFs and webpages is exactly how injection works.",
+          why: "False. Hidden or sneaky text in emails, PDFs and webpages is exactly how injection works.",
         },
         {
           id: "rt-003",
@@ -93,7 +93,7 @@ export const redTeam: World = {
           type: "cap",
           claim: "Giving an AI fewer permissions makes a successful attack less damaging.",
           isCap: false,
-          why: "Facts. It's called least privilege. If the AI can't touch it, an attacker can't make it touch it.",
+          why: "True. It's called least privilege. If the AI can't touch it, an attacker can't make it touch it.",
         },
         {
           id: "rt-105",

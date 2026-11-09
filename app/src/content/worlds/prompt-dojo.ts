@@ -103,7 +103,7 @@ export const promptDojo: World = {
           type: "cap",
           claim: "A longer prompt is always a better prompt.",
           isCap: true,
-          why: "Cap. Clear beats long. Extra fluff can bury the part that matters.",
+          why: "False. Clear beats long. Extra fluff can bury the part that matters.",
           meme: { kind: "expect", expectation: "500-word prompt = genius answer", reality: "AI focuses on the wrong paragraph" },
         },
         {
@@ -150,7 +150,7 @@ export const promptDojo: World = {
           type: "cap",
           claim: "If the AI sounds confident, the answer is correct.",
           isCap: true,
-          why: "Cap. AI sounds confident even when it's wrong. Confidence is a tone, not proof.",
+          why: "False. AI sounds confident even when it's wrong. Confidence is a tone, not proof.",
         },
         {
           id: "pd-204",

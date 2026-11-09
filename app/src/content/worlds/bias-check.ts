@@ -22,7 +22,7 @@ export const biasCheck: World = {
           why: "AI copies patterns in its training data, unfair ones included. Old bias in, new bias out.",
           meme: { kind: "expect", expectation: "AI is neutral, it's just maths", reality: "AI learned from history, and history wasn't fair" },
         },
-        { id: "bc-002", type: "cap", claim: "Because it's a computer, an AI can't be biased.", isCap: true, why: "Cap. Models learn from human-made data. If the data is skewed, the model is too." },
+        { id: "bc-002", type: "cap", claim: "Because it's a computer, an AI can't be biased.", isCap: true, why: "False. Models learn from human-made data. If the data is skewed, the model is too." },
         {
           id: "bc-003", type: "choice",
           prompt: "A face-unlock feature works great on some skin tones and badly on others. Most likely cause?",
@@ -59,7 +59,7 @@ export const biasCheck: World = {
           why: "High-stakes decisions need explanations and a human who can overturn them.",
           meme: { kind: "drake", no: "computer says no, no reason given", yes: "here's why, and a human can review it" },
         },
-        { id: "bc-103", type: "cap", claim: "Testing an AI on different groups of people can reveal bias that average accuracy hides.", isCap: false, why: "Facts. 95% accurate overall can still mean 70% for one group. Always break results down." },
+        { id: "bc-103", type: "cap", claim: "Testing an AI on different groups of people can reveal bias that average accuracy hides.", isCap: false, why: "True. 95% accurate overall can still mean 70% for one group. Always break results down." },
         {
           id: "bc-104", type: "choice",
           prompt: "You notice an AI image generator always draws doctors as men. What can you do as a user?",
@@ -67,7 +67,7 @@ export const biasCheck: World = {
           answer: 1,
           why: "Prompt for what you want and report patterns. User feedback is how products get fixed.",
         },
-        { id: "bc-105", type: "cap", claim: "Removing names from job applications automatically removes all bias from an AI screener.", isCap: true, why: "Cap. Other details like school, zip code or hobbies can stand in for the same thing. Bias hides in proxies." },
+        { id: "bc-105", type: "cap", claim: "Removing names from job applications automatically removes all bias from an AI screener.", isCap: true, why: "False. Other details like school, zip code or hobbies can stand in for the same thing. Bias hides in proxies." },
       ],
     },
   ],

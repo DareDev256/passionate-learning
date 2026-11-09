@@ -16,7 +16,7 @@ It's built in the open. **A new world is one data file**, so anyone who just lea
 |---|---|---|
 | Prompt Dojo | Talking to AI so it actually helps | 18 |
 | Token Temple | How AI thinks, one token at a time | 17 |
-| Cap Detector | Catching AI when it makes things up | 15 |
+| Fact Check | Catching AI when it makes things up | 15 |
 | Red Team | How AI gets tricked, and how to protect it | 10 |
 | Bias Check | When AI treats people unfairly, and why | 10 |
 | Tool Shop | Picking the right tool (sometimes it's not AI) | 15 |

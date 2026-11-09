@@ -27,7 +27,7 @@ export const tokenTemple: World = {
           type: "cap",
           claim: "A chatbot writes its whole answer at once, then shows it to you.",
           isCap: true,
-          why: "Cap. It writes one token at a time, and each new token is chosen using everything before it. That's why answers stream in.",
+          why: "False. It writes one token at a time, and each new token is chosen using everything before it. That's why answers stream in.",
         },
         {
           id: "tt-003",
@@ -95,7 +95,7 @@ export const tokenTemple: World = {
           type: "cap",
           claim: "Chatbots remember everything you said in every past conversation by default.",
           isCap: true,
-          why: "Cap. A model only sees what's in its context window right now. Some apps add memory features on top, but the model itself doesn't remember.",
+          why: "False. A model only sees what's in its context window right now. Some apps add memory features on top, but the model itself doesn't remember.",
         },
         {
           id: "tt-105",
@@ -140,7 +140,7 @@ export const tokenTemple: World = {
           type: "cap",
           claim: "AI models can count the letters in a word perfectly every time.",
           isCap: true,
-          why: "Cap. Models see tokens, not letters, so counting letters (like the r's in strawberry) can trip them up.",
+          why: "False. Models see tokens, not letters, so counting letters (like the r's in strawberry) can trip them up.",
         },
         {
           id: "tt-204",
@@ -156,7 +156,7 @@ export const tokenTemple: World = {
           prompt: "When an AI confidently makes something up, it's called a ____________.",
           accept: ["hallucination", "hallucinations"],
           hint: "like seeing things that aren't there",
-          why: "Hallucination: confident, fluent and wrong. Head to Cap Detector to hunt them.",
+          why: "Hallucination: confident, fluent and wrong. Head to Fact Check to hunt them.",
         },
       ],
     },
