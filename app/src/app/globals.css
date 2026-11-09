@@ -335,6 +335,10 @@ a { color: inherit; }
   .bubble { font-size: 18px; }
   .react-zone { min-height: 150px; margin-top: 18px; }
   .chip.lv { display: none; }
+  .chips { gap: 6px; }
+  .chip { padding: 4px 8px; font-size: 12px; }
+  .chip.rank b { font-size: 14px; }
+  .chip-btn { min-width: 44px; padding: 4px 0; }
   .logo-mark svg { width: 44px; height: auto; }
   .react-say { font-size: 18px; margin-bottom: 84px; }
 }
@@ -403,3 +407,72 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
 .missed-why { font: 400 17px/1.2 var(--hand); color: var(--mid); }
 .fix-banner { margin: 0 0 8px; font: 700 12px var(--mono); letter-spacing: 0.1em; color: var(--accent); text-align: center; }
 .drawer .again { margin: 6px 0 0; font: 700 13px/1.3 var(--mono); letter-spacing: 0.02em; }
+
+/* ---------- first-launch card ---------- */
+.onb-hero { display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 6px; margin: 0 0 6px; }
+.onb-hero .bubble { margin-bottom: 26px; font-size: 19px; }
+.onb-q { font: 400 clamp(30px, 8.5vw, 42px)/1 var(--display); margin: 4px 0 18px; }
+.onb-opt { display: grid; gap: 2px; width: 100%; min-height: 64px; }
+.onb-label { font: 400 20px/1.1 var(--display); }
+.onb-line { font: 400 18px/1.15 var(--hand); color: var(--mid); }
+.onb-foot { margin-top: 26px; }
+.onb-skip { display: block; margin: 8px auto 0; background: none; border: 0; padding: 10px 12px; min-height: 44px; font: 700 14px var(--mono); text-decoration: underline; cursor: pointer; color: var(--ink); }
+
+/* ---------- home: rank strip, the path, links ---------- */
+.chips { flex-wrap: nowrap; flex: none; }
+.topbar > .logo { min-width: 0; }
+.chip.rank { text-decoration: none; }
+.rank-strip { display: grid; gap: 6px; margin: -6px 0 16px; text-decoration: none; color: var(--ink); }
+.rs-t { font: 700 12px var(--mono); letter-spacing: 0.04em; }
+.rs-t b { font-family: var(--display); color: var(--accent); font-size: 14px; }
+.rs-bar { height: 10px; border: 2px solid var(--ink); border-radius: 999px; background: var(--soft); overflow: hidden; }
+.rs-bar i { display: block; height: 100%; background: var(--accent); }
+.hp { margin: 0 0 18px; }
+.hp-cleared { margin: 0 0 8px; font: 700 12px var(--mono); letter-spacing: 0.08em; color: var(--mid); }
+.hp-cleared span { color: var(--good); }
+.hp-now { border: 3px solid var(--ink); border-radius: 18px; background: var(--paper); box-shadow: 0 5px 0 var(--ink); overflow: hidden; }
+.hp-now .world-tag { display: block; background: var(--accent); }
+.hp-now-body { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 14px 4px; }
+.hp-sub { display: block; font: 700 12px var(--mono); letter-spacing: 0.06em; color: var(--mid); margin-top: 2px; }
+.hp-blurb { margin: 4px 0 0; font: 400 18px/1.15 var(--hand); }
+.hp-now .btn { width: calc(100% - 28px); margin: 8px 14px 14px; }
+.hp-ahead { list-style: none; margin: 14px 0 0 22px; padding: 0 0 0 18px; border-left: 3px dotted var(--ink); display: grid; gap: 12px; }
+.hp-ahead li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; position: relative; }
+.hp-ahead li::before { content: ""; position: absolute; left: -21px; top: 50%; width: 18px; border-top: 3px dotted var(--ink); }
+.hp-dot { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--ink); display: grid; place-items: center; font-size: 14px; background: var(--wa, var(--accent)); color: var(--paper); }
+.hp-ahead li.locked .hp-dot { background: var(--soft); color: var(--mid); border-color: #bbb; }
+.hp-t { display: grid; }
+.hp-t b { font: 400 16px/1.1 var(--display); }
+.hp-t small { font: 400 16px/1.1 var(--hand); color: var(--mid); }
+.hp-ahead li.locked { opacity: 0.8; }
+.hp-all { display: inline-block; margin: 14px 0 0 4px; font: 700 14px var(--mono); color: var(--ink); min-height: 44px; line-height: 44px; }
+.hp-done { display: grid; gap: 10px; justify-items: center; text-align: center; border: 3px solid var(--ink); border-radius: 18px; padding: 16px; background: var(--paper); box-shadow: 0 5px 0 var(--ink); }
+.hp-done p { margin: 0; font: 400 19px/1.2 var(--hand); }
+.home-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.home-links .btn { padding: 14px 10px; font-size: 15px; }
+
+/* ---------- profile ---------- */
+.pf-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.pf-name { margin: 0; font: 400 26px/1 var(--display); overflow-wrap: anywhere; }
+.pf-lv { margin: 4px 0 0; font: 700 12px var(--mono); letter-spacing: 0.08em; color: var(--mid); }
+.pf-rank { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; border: 4px solid var(--ink); background: var(--ink); color: var(--sys-edge); font: 400 40px var(--display); box-shadow: 0 5px 0 var(--accent); }
+.pf-bar { margin-top: 12px; }
+.pf-next { margin: 6px 0 0; font: 400 18px var(--hand); }
+.pf-note { margin: 6px 0 0; font: 400 17px/1.2 var(--hand); color: var(--mid); }
+.pf-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.pf-stats .stat { text-align: center; }
+.pf-floor { margin: 10px 0 0; font: 400 18px var(--hand); color: var(--mid); text-align: center; }
+.pf-worlds { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pf-worlds li { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr) 3.6em; align-items: center; gap: 10px; }
+.pf-wname { font: 400 14px/1.1 var(--display); overflow-wrap: anywhere; }
+.pf-worlds .bar { margin: 0; }
+.pf-wpct { font: 700 12px var(--mono); text-align: right; color: var(--mid); }
+.pf-ach { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.pf-ach li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; border: 3px solid var(--ink); border-radius: 14px; padding: 8px 10px; background: var(--paper); box-shadow: 0 4px 0 var(--ink); }
+.pf-ach li.locked { border-style: dashed; box-shadow: none; border-color: #9a9a9a; }
+.pf-ach li.locked .pf-at b { color: var(--mid); }
+.pf-at { display: grid; min-width: 0; }
+.pf-at b { font: 400 14px/1.1 var(--display); overflow-wrap: anywhere; }
+.pf-at small { font: 400 15px/1.1 var(--hand); color: var(--mid); overflow-wrap: anywhere; }
+@media (max-width: 420px) { .pf-ach { grid-template-columns: minmax(0, 1fr); } }
+.fix-cta { margin: 0 0 18px; }

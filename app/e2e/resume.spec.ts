@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { freshPage, answerFirstCard } from "./helpers";
+import { freshPage, answerFirstCard, seedSave } from "./helpers";
 
 async function firstOpenRound(page: import("@playwright/test").Page) {
   await page.goto("/w/prompt/");
@@ -29,8 +29,9 @@ test("a round survives a reload: two answered, card three showing", async ({ pag
 
 test("Home offers the round in progress, and tapping it resumes on card three", async ({ page }) => {
   await page.goto("/");
-  await freshPage(page);
-  await expect(page.locator("h2.h2").first()).toBeVisible();
+  await seedSave(page);
+  await page.reload();
+  await expect(page.locator(".play-cta")).toBeVisible();
   await expect(page.getByRole("region", { name: "Continue your round" })).toHaveCount(0);
 
   await firstOpenRound(page);
@@ -124,7 +125,7 @@ test("Reset progress in Settings drops the round in progress, so Home offers no 
   expect(await page.evaluate(() => localStorage.getItem("passionate-learning:round"))).toBeNull();
 
   await page.getByRole("link", { name: "Back to the map" }).click();
-  await expect(page.locator("h2.h2").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What brought you here?" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Continue your round" })).toHaveCount(0);
 });
 

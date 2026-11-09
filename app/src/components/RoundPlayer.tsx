@@ -270,6 +270,7 @@ function Recap({ world, unitId, result, levelBefore, answers, wasCleared, onFix 
         <div className="stat"><b>+{result.tokensGained}</b><span>🎟 TOKENS</span></div>
       </div>
       <p className={`unlock-line unlock-${unlock.kind}`} data-testid="unlock-line"><span className="unlock-ic" aria-hidden="true">{unlock.kind === "need" ? "🔒" : "🔓"}</span>{unlock.text}</p>
+      {missed.length > 0 && <button type="button" className="btn block ink fix-cta" onClick={onFix}>🛠 FIX YOUR MISTAKES</button>}
       {result.rankAfter !== result.rankBefore && (
         <SystemWindow title={`RANK UP: ${result.rankBefore} → ${result.rankAfter}`} tone="gold">You have been promoted to <b>Rank {result.rankAfter}</b>. The System is watching. Keep going.</SystemWindow>
       )}
@@ -300,9 +301,8 @@ function Recap({ world, unitId, result, levelBefore, answers, wasCleared, onFix 
         </section>
       )}
       <div className="recap-actions">
-        {missed.length > 0 && <button type="button" className="btn block ink" onClick={onFix}>🛠 FIX YOUR MISTAKES</button>}
         {opened && nextUnit ? <Link className="btn block" href={`/play/${world.id}/${nextUnit.id}/`}>{"\u25B6\uFE0E"} NEXT: {nextUnit.title}</Link> : null}
-        <button className={`btn block ${(opened && nextUnit) || missed.length ? "ghost" : ""}`} onClick={() => location.reload()}>↻ {pct >= 70 ? "AGAIN" : "REPLAY IT NOW"}</button>
+        <button className={`btn block ${opened && nextUnit ? "ghost" : ""}`} onClick={() => location.reload()}>↻ {pct >= 70 ? "AGAIN" : "REPLAY IT NOW"}</button>
         <Link className="btn block ghost" href="/arcade/">🎟 ARCADE BREAK</Link>
         <Link className="btn block ghost" href="/">HOME</Link>
       </div>

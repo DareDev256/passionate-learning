@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { WORLDS, getWorld, liveWorlds } from "@/content";
+import { getWorld } from "@/content";
 import type { Unit, World } from "@/content/types";
 import { Logo } from "@/art/Logo";
 import { Stick } from "@/art/Stick";
-import { SystemWindow } from "./SystemWindow";
 import { useSave } from "@/lib/useSave";
-import { type Save, dueKeys, isCleared, isMastered, levelOf, rankOf, unitKey } from "@/lib/save";
+import { type Save, dueKeys, levelOf, rankOf } from "@/lib/save";
+import { needsOnboarding } from "@/lib/onboarding";
+import { Onboarding } from "./Onboarding";
+import { HomePath } from "./HomePath";
 import { peekInProgress } from "@/lib/roundResume";
 import { questsOf } from "@/lib/quests";
 import { QuestsCard } from "./QuestsCard";
@@ -42,22 +44,9 @@ function ContinueRound() {
   );
 }
 
-/** The first unit that isn't cleared yet, in map order. */
-function nextUp(save: Save) {
-  for (const w of liveWorlds()) for (const u of w.units) if (!isCleared(save.units[unitKey(w.id, u.id)])) return { w, u };
-  const w = liveWorlds()[0];
-  return { w, u: w.units[0] };
-}
-
-function worldProgress(w: World, save: Save) {
-  if (!w.units.length) return 0;
-  const done = w.units.filter((u) => isCleared(save.units[unitKey(w.id, u.id)])).length;
-  return done / w.units.length;
-}
-
 function guideLine(save: Save, due: number) {
   const quest = questsOf(save);
-  if (save.days.length === 0) return <>Yo. I&apos;m your guide. One round is <em>60 seconds</em>. That&apos;s the whole ask.</>;
+  if (save.days.length === 0) return <>Ready when you are. One round is <em>60 seconds</em>. That&apos;s the whole ask.</>;
   if (quest.allDone) return <>Daily quest <em>cleared</em>. Everything else today is bonus. Go touch grass, or keep going.</>;
   if (due > 0) return <><em>{due} card{due === 1 ? "" : "s"}</em> about to slip out of your brain. One round saves {due === 1 ? "it" : "them"}.</>;
   if (quest.round) return <>Round done today. That counts. A missed day <em>resets nothing</em> here.</>;
@@ -65,75 +54,48 @@ function guideLine(save: Save, due: number) {
 }
 
 export function Home() {
-  const { save, ready } = useSave();
+  const { save, update, ready } = useSave();
   const r = rankOf(save.xp);
   const due = dueKeys(save).length;
-  const up = nextUp(save);
   const span = r.next ? r.next - r.floor : 1;
   const pct = r.next ? Math.min(100, ((save.xp - r.floor) / span) * 100) : 100;
   const face = questsOf(save).round ? "cool" : due > 0 ? "shock" : "grin";
+
+  // The static HTML has no save. Hold the page until it is read so a returning player never sees the first-launch card flash.
+  if (!ready) return <main className="wrap" aria-busy="true"><header className="topbar"><Logo size={54} /></header></main>;
+  // A round already under way (deep link, or iOS closed the app) means they have started: offer to continue, not the first question.
+  if (needsOnboarding(save) && !peekInProgress()) return <Onboarding save={save} update={update} />;
 
   return (
     <main className="wrap">
       <header className="topbar">
         <Logo size={54} />
         <div className="chips" aria-label="Your stats">
-          <span className="chip rank" title="Rank">RANK <b>{r.rank}</b></span>
+          <Link className="chip rank" href="/profile/" title="Your profile">RANK <b>{r.rank}</b></Link>
           <span className="chip lv" title="Level">LV {levelOf(save.xp)}</span>
           <Link className="chip" href="/arcade/" title="Arcade tokens">🎟 {save.tokens}</Link>
           <Link className="chip chip-btn" href="/settings/" aria-label="Settings" title="Settings">⚙</Link>
         </div>
       </header>
+      <Link className="rank-strip" href="/profile/" aria-label={`Rank ${r.rank}, ${save.xp} XP. Open your profile.`}>
+        <span className="rs-t">{r.next ? <>{save.xp} / {r.next} XP to rank <b>{rankAfter(r.rank)}</b></> : <>Rank S. You cleared the System.</>}</span>
+        <span className="rs-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>
+      </Link>
 
       <ContinueRound />
 
       <div className="guide">
         <span className="guide-bob"><Stick pose={save.days.length ? "wave" : "point"} face={face} size={84} label="Your guide, a stickman with a red headband" /></span>
-        <p className="bubble">{ready ? guideLine(save, due) : <>Loading your brain...</>}</p>
+        <p className="bubble">{guideLine(save, due)}</p>
       </div>
 
-      <Link className="btn block play-cta" href={`/play/${up.w.id}/${up.u.id}/`}>
-        {"\u25B6\uFE0E"} PLAY: {up.w.title} · {up.u.title}
-      </Link>
-
+      <HomePath save={save} />
       <QuestsCard />
 
-      <SystemWindow title="RANK">
-        <div className="sys-meter" aria-label={`Rank progress ${Math.round(pct)}%`}><i style={{ width: `${pct}%` }} /></div>
-        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-          {r.next ? <>RANK {r.rank} → next at <b>{r.next} XP</b> · you have {save.xp}</> : <>RANK S. You cleared the System.</>} · days played <b>{save.days.length}</b>
-        </div>
-      </SystemWindow>
-
-      <h2 className="h2">Worlds <small>pick one, any one</small></h2>
-      <div className="worlds">
-        {liveWorlds().map((w) => {
-          const prog = worldProgress(w, save);
-          const mastered = w.units.every((u) => isMastered(save.units[unitKey(w.id, u.id)]));
-          return (
-            <Link key={w.id} className="world" href={`/w/${w.id}/`} style={{ ["--wa" as string]: w.accent } as React.CSSProperties}>
-              <span className="world-tag">{w.units.length} UNITS{mastered ? " · MASTERED" : prog > 0 ? ` · ${Math.round(prog * 100)}%` : ""}</span>
-              <span className="world-art"><Stick {...w.guide} size={64} label={`${w.title} guide`} /></span>
-              <span className="world-body">
-                <span className="world-title">{w.title}</span>
-                <span className="world-tagline">{w.tagline}</span>
-                <span className="bar" aria-label={`${Math.round(prog * 100)}% cleared`}><i style={{ width: `${prog * 100}%` }} /></span>
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-
-      <h2 className="h2">Unlocking soon <small>new worlds keep dropping</small></h2>
-      <div className="soon-strip" aria-label="Worlds coming soon">
-        {WORLDS.filter((w) => w.status !== "live").map((w) => (
-          <div key={w.id} className="soon-card" style={{ ["--wa" as string]: w.accent } as React.CSSProperties}>
-            <Stick {...w.guide} size={40} label={`${w.title} guide`} />
-            <span className="world-title">{w.title}</span>
-            <span className="world-tagline">{w.tagline}</span>
-          </div>
-        ))}
-      </div>
+      <nav className="home-links" aria-label="More">
+        <Link className="btn ghost" href="/worlds/">ALL WORLDS</Link>
+        <Link className="btn ghost" href="/profile/">YOUR PROFILE</Link>
+      </nav>
 
       <footer className="foot">
         Free, open source, made with <a href="https://github.com/DareDev256/passionate-learning">the community</a> by DareDev256 ·{" "}
@@ -142,3 +104,6 @@ export function Home() {
     </main>
   );
 }
+
+const RANK_ORDER = ["E", "D", "C", "B", "A", "S"];
+const rankAfter = (rank: string) => RANK_ORDER[RANK_ORDER.indexOf(rank) + 1] ?? "S";

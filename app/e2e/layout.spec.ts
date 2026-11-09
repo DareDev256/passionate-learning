@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { freshPage, answerFirstCard, expectNoHorizontalScroll } from "./helpers";
 
-const PAGES = ["/", "/w/prompt/", "/w/circuit/", "/about/", "/settings/", "/privacy/", "/support/", "/does-not-exist/"];
+const PAGES = ["/", "/worlds/", "/profile/", "/w/prompt/", "/w/circuit/", "/about/", "/settings/", "/privacy/", "/support/", "/does-not-exist/"];
 const ROUNDS = ["/play/prompt/say-it/", "/play/circuit/parts/"];
 const OPTIONS = ".options .opt, .opt-row .opt, [aria-label='Sentences'] .sentence";
 
@@ -14,7 +14,7 @@ async function seededTokenRound(page: Page, motion: "reduce" | "system") {
   await page.goto("/play/token/next-word/");
   await page.evaluate((m) => {
     localStorage.clear();
-    localStorage.setItem("passionate-learning:v1", JSON.stringify({ v: 1, settings: { motion: m } }));
+    localStorage.setItem("passionate-learning:v1", JSON.stringify({ v: 1, settings: { motion: m } })); // a v1 save on purpose: it is upgraded on load
     localStorage.setItem("passionate-learning:round", JSON.stringify({ world: "token", unit: "next-word", seed: 4, idx: 0, answers: [], spentMs: 0, roundXp: 0, combo: 0, savedAt: Date.now() }));
   }, motion);
   await page.reload();
