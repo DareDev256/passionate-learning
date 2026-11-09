@@ -6,6 +6,8 @@ export const SAVE_KEY = "passionate-learning:v2";
 /** The v1 save's key. Read once to upgrade, then removed; the payload lives on as BACKUP_KEY. */
 export const LEGACY_KEY = "passionate-learning:v1";
 export const BACKUP_KEY = "passionate-learning:v1-backup";
+/** A v2 key that could not be read (corrupt, or from a newer build), copied here before it is overwritten. */
+export const PRESERVED_KEY = "passionate-learning:v2-preserved";
 
 export interface CardMemory {
   /** FSRS card state, dates as ISO strings. */
@@ -116,6 +118,26 @@ function sanitizeEvents(raw: unknown): SaveEvent[] {
   return out;
 }
 
+const validDate = (x: unknown): x is string => typeof x === "string" && Number.isFinite(new Date(x).getTime());
+const count = (x: unknown): number => (isNum(x) && x >= 0 ? Math.floor(x) : 0);
+
+/**
+ * Rebuilds one card memory field by field so nothing malformed can reach the scheduler (a missing stability or a bad
+ * date would throw inside a round). A memory with no usable schedule becomes a new card that is due now, keeping the
+ * player's seen and correct counts. A memory with no usable due date is dropped.
+ */
+function cleanCard(v: unknown): CardMemory | null {
+  if (!isObj(v) || !validDate(v.due)) return null;
+  const usable = isNum(v.stability) && isNum(v.difficulty) && isNum(v.state) && v.state >= 1 && v.state <= 3;
+  const m: CardMemory = {
+    due: v.due, stability: usable ? (v.stability as number) : 0, difficulty: usable ? (v.difficulty as number) : 0,
+    elapsed_days: count(v.elapsed_days), scheduled_days: count(v.scheduled_days), reps: usable ? count(v.reps) : 0, lapses: usable ? count(v.lapses) : 0,
+    state: usable ? Math.floor(v.state as number) : 0, seen: count(v.seen), correct: Math.min(count(v.correct), count(v.seen)),
+  };
+  if (usable && validDate(v.last_review)) m.last_review = v.last_review;
+  return m;
+}
+
 /**
  * Accepts anything; returns a valid v2 Save. A v1 save is upgraded (nothing it holds is dropped); a v2 save is cleaned;
  * anything else becomes a fresh save. Unknown or malformed fields fall back to defaults.
@@ -125,8 +147,8 @@ export function migrate(raw: unknown): Save {
   if (!isObj(raw) || (raw.v !== 1 && raw.v !== 2)) return s;
   if (isNum(raw.xp) && raw.xp >= 0) s.xp = Math.floor(raw.xp);
   if (Array.isArray(raw.days)) s.days = [...new Set(raw.days.filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort();
-  if (isObj(raw.cards)) for (const [k, v] of Object.entries(raw.cards)) if (/^[a-z0-9-]+:[a-z0-9-]+$/.test(k) && isObj(v) && typeof v.due === "string") s.cards[k] = v as unknown as CardMemory;
-  if (isObj(raw.units)) for (const [k, v] of Object.entries(raw.units)) if (isObj(v) && Array.isArray(v.last)) s.units[k] = { last: (v.last as unknown[]).filter((n): n is number => typeof n === "number").slice(-3), best: Number(v.best) || 0, rounds: Number(v.rounds) || 0 };
+  if (isObj(raw.cards)) for (const [k, v] of Object.entries(raw.cards)) if (/^[a-z0-9-]+:[a-z0-9-]+$/.test(k)) { const c = cleanCard(v); if (c) s.cards[k] = c; }
+  if (isObj(raw.units)) for (const [k, v] of Object.entries(raw.units)) if (isObj(v)) s.units[k] = { last: (Array.isArray(v.last) ? v.last : []).filter((n): n is number => isNum(n)).slice(-3), best: Math.min(1, Math.max(0, Number(v.best) || 0)), rounds: Math.max(0, Math.floor(Number(v.rounds) || 0)) };
   if (isNum(raw.tokens) && raw.tokens >= 0) s.tokens = Math.floor(raw.tokens);
   if (isObj(raw.settings)) s.settings = { sound: raw.settings.sound !== false, haptics: raw.settings.haptics !== false, motion: raw.settings.motion === "reduce" || raw.settings.motion === "full" ? raw.settings.motion : "system", name: typeof raw.settings.name === "string" ? raw.settings.name.slice(0, 24) : "" };
 
@@ -159,7 +181,9 @@ export function loadSave(now = new Date()): Save {
       try {
         const parsed: unknown = JSON.parse(rawV2);
         if (isObj(parsed) && parsed.v === 2) return rollQuest(migrate(parsed), now);
-      } catch { /* a corrupt v2 falls through to the v1 backup, if there is one */ }
+      } catch { /* unreadable: handled below */ }
+      // A v2 key we cannot use (corrupt, or written by a newer build): keep the original before anything overwrites it.
+      try { if (localStorage.getItem(PRESERVED_KEY) === null) localStorage.setItem(PRESERVED_KEY, rawV2); } catch { /* nothing more to do */ }
     }
     const legacy = localStorage.getItem(LEGACY_KEY);
     const source = legacy ?? localStorage.getItem(BACKUP_KEY);
@@ -168,7 +192,8 @@ export function loadSave(now = new Date()): Save {
     const json = JSON.stringify(upgraded);
     try {
       localStorage.setItem(SAVE_KEY, json);
-      if (localStorage.getItem(SAVE_KEY) === json && legacy !== null) { localStorage.setItem(BACKUP_KEY, legacy); localStorage.removeItem(LEGACY_KEY); }
+      // Only once the v2 save reads back, and never over a backup that already exists: the first v1 payload is the one worth keeping.
+      if (localStorage.getItem(SAVE_KEY) === json && legacy !== null && localStorage.getItem(BACKUP_KEY) === null) { localStorage.setItem(BACKUP_KEY, legacy); localStorage.removeItem(LEGACY_KEY); }
     } catch { /* full or blocked: play on, and the v1 data is still there for the next try */ }
     return rollQuest(upgraded, now);
   } catch { return freshSave(); }
@@ -181,7 +206,7 @@ export function writeSave(s: Save): void {
 
 /** Removes the v1 backup (and any v1 key). Reset progress calls this so a reset really is one: the backup must not bring the old save back. */
 export function forgetLegacy(): void {
-  try { localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(LEGACY_KEY); } catch { /* nothing to forget if storage is blocked */ }
+  try { localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(LEGACY_KEY); localStorage.removeItem(PRESERVED_KEY); } catch { /* nothing to forget if storage is blocked */ }
 }
 
 /** A new day gets new quests. */

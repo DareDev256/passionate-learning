@@ -3,7 +3,7 @@
 // `applyRound`) over six rounds on five days across three worlds, with a fixed clock. It is checked in as data, not regenerated.
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import v1 from "./fixtures/v1-save-veteran.json";
-import { freshSave, migrate, importCap, loadSave, writeSave, SAVE_KEY, LEGACY_KEY, BACKUP_KEY, type Save } from "@/lib/save";
+import { freshSave, migrate, importCap, loadSave, writeSave, reviewCard, SAVE_KEY, LEGACY_KEY, BACKUP_KEY, PRESERVED_KEY, type Save } from "@/lib/save";
 import { applyRound } from "@/lib/round";
 import { getWorld, cardKey } from "@/content";
 
@@ -80,6 +80,35 @@ describe("migrate: odd inputs", () => {
   });
 });
 
+describe("migrate: damaged card memory and units", () => {
+  const cardWith = (over: Record<string, unknown>) => migrate({ v: 1, cards: { "prompt:pd-001": { due: "2026-11-08T00:00:00.000Z", state: 2, reps: 2, seen: 5, correct: 3, ...over } } }).cards["prompt:pd-001"];
+  it("a memory with no stability or difficulty becomes a new card, keeping seen and correct, and the scheduler accepts it", () => {
+    const c = cardWith({});
+    expect(c).toMatchObject({ state: 0, stability: 0, difficulty: 0, reps: 0, seen: 5, correct: 3 });
+    expect(() => reviewCard(c, true, NOW, "prompt:pd-001")).not.toThrow();
+  });
+  it("a bad last_review is dropped and the card still schedules", () => {
+    const c = cardWith({ stability: 3, difficulty: 5, last_review: "banana" });
+    expect(c.last_review).toBeUndefined();
+    expect(() => reviewCard(c, false, NOW, "k")).not.toThrow();
+  });
+  it("seen as a string cannot turn into concatenation, and correct never exceeds seen", () => {
+    const c = cardWith({ seen: "5", correct: 9, stability: 1, difficulty: 5 });
+    expect(c.seen).toBe(0);
+    expect(c.correct).toBe(0);
+  });
+  it("an out-of-range state is not trusted", () => {
+    expect(cardWith({ stability: 1, difficulty: 5, state: 9 }).state).toBe(0);
+  });
+  it("a card with no usable due date is dropped, not guessed", () => {
+    expect(migrate({ v: 1, cards: { "a:b": { due: "nope", seen: 3 } } }).cards).toEqual({});
+  });
+  it("a unit with no last array keeps its best and rounds; out-of-range values are clamped", () => {
+    expect(migrate({ v: 1, units: { "a/b": { best: 1, rounds: 3 } } }).units["a/b"]).toEqual({ last: [], best: 1, rounds: 3 });
+    expect(migrate({ v: 1, units: { "a/b": { last: [0.5], best: 7, rounds: -2 } } }).units["a/b"]).toEqual({ last: [0.5], best: 1, rounds: 0 });
+  });
+});
+
 describe("loadSave", () => {
   let store: Map<string, string>;
   beforeEach(() => { store = installStorage(); });
@@ -114,6 +143,19 @@ describe("loadSave", () => {
     store.set(SAVE_KEY, "{not json");
     store.set(BACKUP_KEY, JSON.stringify(v1));
     expect(loadSave(NOW).xp).toBe(v1.xp);
+  });
+  it("an unreadable or newer-version v2 key is preserved before anything overwrites it", () => {
+    store.set(SAVE_KEY, JSON.stringify({ v: 3, xp: 5000 }));
+    store.set(BACKUP_KEY, JSON.stringify(v1));
+    loadSave(NOW);
+    expect(JSON.parse(store.get(PRESERVED_KEY)!)).toEqual({ v: 3, xp: 5000 });
+  });
+  it("an existing backup is never overwritten by a later v1 key", () => {
+    store.set(BACKUP_KEY, "first");
+    store.set(LEGACY_KEY, JSON.stringify({ ...v1, xp: 1 }));
+    loadSave(NOW);
+    expect(store.get(BACKUP_KEY)).toBe("first");
+    expect(store.has(LEGACY_KEY)).toBe(true);
   });
   it("a corrupt v2 key and nothing else gives a fresh save, not a crash", () => {
     store.set(SAVE_KEY, "{not json");
