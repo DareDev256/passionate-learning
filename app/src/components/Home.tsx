@@ -10,6 +10,7 @@ import { useSave } from "@/lib/useSave";
 import { type Save, dueKeys, isCleared, isMastered, levelOf, rankOf, unitKey } from "@/lib/save";
 import { peekInProgress } from "@/lib/roundResume";
 import { questsOf } from "@/lib/quests";
+import { QuestsCard } from "./QuestsCard";
 
 /**
  * A round iOS closed while it was in progress. The app always relaunches at Home, so the offer to pick it up lives here.
@@ -95,20 +96,14 @@ export function Home() {
         {"\u25B6\uFE0E"} PLAY: {up.w.title} · {up.u.title}
       </Link>
 
-      {save.xp === 0 ? (
-        <SystemWindow title="DAILY QUEST"><span>Finish <b>1 round</b>. That&apos;s a full day. That&apos;s it.</span></SystemWindow>
-      ) : (
-        <SystemWindow title="DAILY QUEST">
-        <ul className="quest">
-          <li className={questsOf(save).round ? "done" : ""}><span className="box">{questsOf(save).round ? "✓" : ""}</span><span>Finish 1 round <b>(counts as a full day)</b></span></li>
-        </ul>
+      <QuestsCard />
+
+      <SystemWindow title="RANK">
         <div className="sys-meter" aria-label={`Rank progress ${Math.round(pct)}%`}><i style={{ width: `${pct}%` }} /></div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
           {r.next ? <>RANK {r.rank} → next at <b>{r.next} XP</b> · you have {save.xp}</> : <>RANK S. You cleared the System.</>} · days played <b>{save.days.length}</b>
         </div>
       </SystemWindow>
-      )}
-
 
       <h2 className="h2">Worlds <small>pick one, any one</small></h2>
       <div className="worlds">

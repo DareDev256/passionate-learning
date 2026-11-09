@@ -377,3 +377,14 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
 .sheet { width: 100%; max-width: 520px; background: var(--paper); border: 3px solid var(--ink); border-bottom: 0; border-radius: 22px 22px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); display: grid; gap: 12px; }
 .sheet h2 { margin: 0; font: 400 24px/1.1 var(--display); }
 .sheet p { margin: 0 0 4px; font: 400 20px/1.2 var(--hand); }
+
+/* ---------- daily quests and the chest ---------- */
+.chest-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(61, 224, 255, 0.45); }
+.chest { display: block; overflow: visible; }
+.chest-text p { margin: 0 0 8px; }
+.chest-text .floor { display: block; margin-top: 4px; color: #9fb7c9; font-size: 12px; }
+.chest-btn { padding: 10px 16px; font-size: 14px; border-color: var(--sys-edge); background: var(--sys-edge); color: var(--ink); box-shadow: 0 4px 0 #0b6f85; }
+.chest-ready .chest-lid { animation: chest-hop 1.1s ease-in-out infinite; }
+.chest-open .chest-glow { animation: chest-glow 1.4s ease-in-out infinite alternate; }
+@keyframes chest-hop { 0%, 60%, 100% { transform: translateY(0) rotate(0); } 75% { transform: translateY(-6px) rotate(-4deg); } 90% { transform: translateY(0) rotate(1deg); } }
+@keyframes chest-glow { from { opacity: 0.25; } to { opacity: 0.55; } }
