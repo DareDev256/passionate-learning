@@ -3,7 +3,7 @@
 
 class Icons {
   // Draw a clock/timer icon
-  static timer(scene, x, y, size = 16, color = 0xffffff) {
+  static timer(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2, color, 0.9);
     g.strokeCircle(x, y, size * 0.45);
@@ -17,7 +17,7 @@ class Icons {
   }
 
   // Draw a zen/lotus icon
-  static zen(scene, x, y, size = 16, color = 0xffffff) {
+  static zen(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2, color, 0.9);
     // Three petals
@@ -34,7 +34,7 @@ class Icons {
   }
 
   // Draw a question mark / help icon
-  static help(scene, x, y, size = 16, color = 0xffffff) {
+  static help(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2, color, 0.9);
     g.strokeCircle(x, y, size * 0.45);
@@ -51,7 +51,7 @@ class Icons {
   }
 
   // Pause icon (two bars)
-  static pause(scene, x, y, size = 16, color = 0xaaaaaa) {
+  static pause(scene, x, y, size = 16, color = P.text2N) {
     const g = scene.add.graphics();
     g.fillStyle(color, 0.9);
     const barW = size * 0.2;
@@ -63,7 +63,7 @@ class Icons {
   }
 
   // Play/resume triangle
-  static play(scene, x, y, size = 16, color = 0xffffff) {
+  static play(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.fillStyle(color, 0.9);
     const h = size * 0.5;
@@ -76,7 +76,7 @@ class Icons {
   }
 
   // Restart / circular arrow
-  static restart(scene, x, y, size = 16, color = 0xffffff) {
+  static restart(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2, color, 0.9);
     const r = size * 0.35;
@@ -96,7 +96,7 @@ class Icons {
   }
 
   // X / close icon
-  static close(scene, x, y, size = 16, color = 0xffffff) {
+  static close(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2.5, color, 0.9);
     const d = size * 0.3;
@@ -106,7 +106,7 @@ class Icons {
   }
 
   // Back arrow
-  static back(scene, x, y, size = 16, color = 0xffffff) {
+  static back(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2.5, color, 0.9);
     const d = size * 0.3;
@@ -117,7 +117,7 @@ class Icons {
   }
 
   // Star icon
-  static star(scene, x, y, size = 16, color = 0xf1c40f) {
+  static star(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     g.fillStyle(color, 0.9);
     const points = [];
@@ -132,11 +132,11 @@ class Icons {
   }
 
   // Fire icon
-  static fire(scene, x, y, size = 16, color = 0xf1c40f) {
+  static fire(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     const h = size * 0.5;
     // Outer flame
-    g.fillStyle(0xff6b35, 0.9);
+    g.fillStyle(P.hotN, 0.9);
     g.fillTriangle(x, y - h, x - h * 0.6, y + h * 0.5, x + h * 0.6, y + h * 0.5);
     g.fillCircle(x, y + h * 0.3, h * 0.5);
     // Inner flame
@@ -146,7 +146,7 @@ class Icons {
   }
 
   // Crown icon
-  static crown(scene, x, y, size = 16, color = 0xf1c40f) {
+  static crown(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     g.fillStyle(color, 0.9);
     const w = size * 0.5;
@@ -157,7 +157,7 @@ class Icons {
     g.fillTriangle(x + w * 0.5, y + h * 0.2, x + w, y - h * 0.3, x + w, y + h);
     g.fillRect(x - w, y + h * 0.5, w * 2, h * 0.4);
     // Gems
-    g.fillStyle(0xe74c3c, 0.9);
+    g.fillStyle(P.hotN, 0.9);
     g.fillCircle(x - w * 0.5, y + h * 0.65, 2);
     g.fillCircle(x, y + h * 0.65, 2);
     g.fillCircle(x + w * 0.5, y + h * 0.65, 2);
@@ -165,7 +165,7 @@ class Icons {
   }
 
   // Sword icon (for ronin streak)
-  static sword(scene, x, y, size = 16, color = 0xe74c3c) {
+  static sword(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     g.lineStyle(2.5, 0xcccccc, 0.9);
     // Blade
@@ -183,7 +183,7 @@ class Icons {
   }
 
   // Lightbulb icon (for hint system)
-  static hint(scene, x, y, size = 16, color = 0xf1c40f) {
+  static hint(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     const r = size * 0.28;
     // Bulb
@@ -199,12 +199,12 @@ class Icons {
       g.lineBetween(rx, ry, rx + Math.cos(angle) * rayLen, ry + Math.sin(angle) * rayLen);
     }
     // Base
-    g.fillStyle(0x888888, 0.8);
+    g.fillStyle(P.mutedN, 0.8);
     g.fillRect(x - r * 0.5, y + size * 0.18, r, size * 0.15);
     return g;
   }
   // Speaker icon (sound on)
-  static sound(scene, x, y, size = 16, color = 0xffffff) {
+  static sound(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     const s = size * 0.3;
     // Speaker body
@@ -220,7 +220,7 @@ class Icons {
   }
 
   // Speaker muted icon (sound off)
-  static soundOff(scene, x, y, size = 16, color = 0xffffff) {
+  static soundOff(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     const s = size * 0.3;
     // Speaker body (dimmed)
@@ -229,14 +229,14 @@ class Icons {
     g.fillTriangle(x - s * 0.1, y - s * 0.4, x + s * 0.6, y - s * 0.9, x + s * 0.6, y + s * 0.9);
     g.fillTriangle(x - s * 0.1, y + s * 0.4, x + s * 0.6, y - s * 0.9, x + s * 0.6, y + s * 0.9);
     // X mark
-    g.lineStyle(2, 0xe74c3c, 0.9);
+    g.lineStyle(2, P.hotN, 0.9);
     g.lineBetween(x + s * 0.6, y - s * 0.5, x + s * 1.4, y + s * 0.5);
     g.lineBetween(x + s * 1.4, y - s * 0.5, x + s * 0.6, y + s * 0.5);
     return g;
   }
 
   // Trophy icon (for stats)
-  static trophy(scene, x, y, size = 16, color = 0xf1c40f) {
+  static trophy(scene, x, y, size = 16, color = P.hotN) {
     const g = scene.add.graphics();
     const s = size * 0.4;
     // Cup body
@@ -250,13 +250,13 @@ class Icons {
     g.fillRect(x - s * 0.15, y + s * 0.4, s * 0.3, s * 0.4);
     g.fillRect(x - s * 0.5, y + s * 0.75, s, s * 0.2);
     // Star on cup
-    g.fillStyle(0x0a0a1a, 0.6);
+    g.fillStyle(P.bgN, 0.6);
     g.fillCircle(x, y - s * 0.15, s * 0.25);
     return g;
   }
 
   // Accessibility / eye icon (colorblind mode)
-  static a11y(scene, x, y, size = 16, color = 0xffffff) {
+  static a11y(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     const s = size * 0.4;
     g.lineStyle(2, color, 0.9);
@@ -275,7 +275,7 @@ class Icons {
   }
 
   // Share / export icon
-  static share(scene, x, y, size = 16, color = 0xffffff) {
+  static share(scene, x, y, size = 16, color = P.inkN) {
     const g = scene.add.graphics();
     g.lineStyle(2, color, 0.9);
     const s = size * 0.35;

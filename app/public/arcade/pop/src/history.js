@@ -63,8 +63,8 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
   if (runs.length < 2) return; // Need at least 2 data points
 
   const GRADE_COLORS = {
-    S: 0xffd700, A: 0x2ecc71, B: 0x3498db,
-    C: 0xff6b35, D: 0xe74c3c, F: 0x666666,
+    S: P.hotN, A: P.inkN, B: P.inkN,
+    C: P.hotN, D: P.hotN, F: P.mutedN,
   };
 
   // Container for all sparkline elements
@@ -73,7 +73,7 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
   // Subtle label
   const label = scene.add.text(cx, cy - maxH / 2 - 12, 'RECENT RUNS',
     { fontSize: '9px', fontFamily: '"Segoe UI", system-ui, sans-serif',
-      color: '#444444', letterSpacing: 3 }).setOrigin(0.5);
+      color: P.faint, letterSpacing: 3 }).setOrigin(0.5);
   container.add(label);
 
   const maxScore = Math.max(...runs.map(r => r.score), 1);
@@ -87,7 +87,7 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
 
   // Baseline
   const baseLine = scene.add.graphics();
-  baseLine.lineStyle(1, 0x2a2a4a, 0.5);
+  baseLine.lineStyle(1, P.lineN, 0.5);
   baseLine.lineBetween(startX - 4, baseY, startX + totalW + 4, baseY);
   container.add(baseLine);
 
@@ -95,7 +95,7 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
   runs.forEach((run, i) => {
     const barH = Math.max(4, (run.score / maxScore) * (maxH - 8));
     const bx = startX + i * (barW + barGap);
-    const color = GRADE_COLORS[run.grade] || 0x666666;
+    const color = GRADE_COLORS[run.grade] || P.mutedN;
     const isLatest = i === runs.length - 1;
 
     const bar = scene.add.graphics();
@@ -136,7 +136,7 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
         bx + barW / 2, baseY - barH - 8,
         run.score >= 1000 ? `${(run.score / 1000).toFixed(1)}k` : String(run.score),
         { fontSize: '10px', fontFamily: '"Segoe UI", system-ui, sans-serif',
-          fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 2 }
+          fontStyle: 'bold', color: P.ink, stroke: P.bg, strokeThickness: 2 }
       ).setOrigin(0.5).setAlpha(0);
       container.add(scoreLabel);
       scene.tweens.add({
@@ -152,7 +152,7 @@ function drawRunSparkline(scene, cx, cy, areaW, maxH) {
     const last = runs[runs.length - 1].score;
     const prevAvg = runs.slice(0, -1).reduce((s, r) => s + r.score, 0) / (runs.length - 1);
     const trending = last > prevAvg * 1.1 ? '↑' : last < prevAvg * 0.9 ? '↓' : '→';
-    const trendColor = trending === '↑' ? '#2ecc71' : trending === '↓' ? '#e74c3c' : '#888888';
+    const trendColor = trending === '↑' ? P.ink : trending === '↓' ? P.hot : P.muted;
 
     const arrow = scene.add.text(cx + totalW / 2 + 14, baseY - maxH / 2,
       trending, { fontSize: '18px', fontFamily: '"Segoe UI", system-ui, sans-serif',

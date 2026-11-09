@@ -182,14 +182,14 @@ class PowerUpRenderer {
         graphics.lineStyle(1.5, 0xffffff, 0.4 * pulse);
         graphics.strokeCircle(x, y, 14 * pulse);
         // Cross
-        graphics.lineStyle(2, 0xff4444, 0.8);
+        graphics.lineStyle(2, P.hotN, 0.8);
         graphics.lineBetween(x - 5, y - 5, x + 5, y + 5);
         graphics.lineBetween(x + 5, y - 5, x - 5, y + 5);
         break;
 
       case POWERUP_TYPES.NUKE:
         // Star burst
-        graphics.lineStyle(2, 0xffd700, 0.9 * pulse);
+        graphics.lineStyle(2, P.hotN, 0.9 * pulse);
         for (let i = 0; i < 6; i++) {
           const angle = (i / 6) * Math.PI * 2 + time * 0.002;
           const len = 10 * pulse;
@@ -201,7 +201,7 @@ class PowerUpRenderer {
           );
         }
         // Center diamond
-        graphics.fillStyle(0xffd700, 0.8 * pulse);
+        graphics.fillStyle(P.hotN, 0.8 * pulse);
         const d = 4;
         graphics.fillTriangle(x, y - d, x + d, y, x, y + d);
         graphics.fillTriangle(x, y - d, x - d, y, x, y + d);
