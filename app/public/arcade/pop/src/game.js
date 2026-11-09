@@ -792,7 +792,7 @@ class GameOverScene extends Phaser.Scene {
 
     // Grade stamp, slammed on after the score lands.
     const gradeY = cardY + cardH + 52;
-    const stamp = this.add.container(width / 2, gradeY).setScale(0).setAngle(-10);
+    const stamp = this.add.container(width / 2, gradeY).setScale(this.reduce ? 0 : 2.6).setAngle(-14).setAlpha(0);
     const ring = this.add.graphics();
     ring.fillStyle(P.inkN, 1); ring.fillCircle(0, 4, 42);
     ring.fillStyle(gradeInfo.grade === 'S' || gradeInfo.grade === 'A' ? P.hotN : P.cardN, 1); ring.fillCircle(0, 0, 42);
@@ -802,7 +802,7 @@ class GameOverScene extends Phaser.Scene {
     const light = (0.2126 * ((fn >> 16) & 255) + 0.7152 * ((fn >> 8) & 255) + 0.0722 * (fn & 255)) / 255 > 0.55;
     const letter = this.add.text(0, -2, gradeInfo.grade, textStyle('heading', { fontSize: '52px', color: light ? '#0a0a0a' : '#ffffff', strokeThickness: 0 })).setOrigin(0.5);
     stamp.add([ring, letter]);
-    this.tweens.add({ targets: stamp, scale: 1, angle: -4, duration: 360, delay: this.reduce ? 0 : 1700, ease: 'Back.easeOut',
+    this.tweens.add({ targets: stamp, scale: 1, alpha: 1, angle: -4, duration: 300, delay: this.reduce ? 0 : 1700, ease: 'Back.easeOut',
       onStart: () => { if (!this.reduce) this.cameras.main.shake(120, 0.004); } });
     this.add.text(width / 2, gradeY + 54, `${gradeInfo.label}  ·  ${mode.toUpperCase()}`, textStyle('badge', { fontSize: '13px', color: P.ink, stroke: '', strokeThickness: 0, letterSpacing: 3 })).setOrigin(0.5, 0.5);
 
@@ -2148,7 +2148,7 @@ class GameScene extends Phaser.Scene {
       bubble.setAlpha(0);
       this.tweens.add({
         targets: bubble, y: pos.y, alpha: { value: 1, duration: 120 },
-        duration: 280 + row * 24, ease: 'Back.easeOut',
+        duration: 340 + row * 34, ease: 'Back.easeOut',
         delay: col * 22 + row * 12,
       });
     }
@@ -2318,6 +2318,7 @@ class GameScene extends Phaser.Scene {
     this.spawnSwapTrail(a, pos1, pos2);
     this.spawnSwapTrail(b, pos2, pos1);
 
+    if (!this.reduce) { this.tweens.add({ targets: a, scaleX: 1.12 * BS, scaleY: 0.88 * BS, duration: 90, yoyo: true }); this.tweens.add({ targets: b, scaleX: 1.12 * BS, scaleY: 0.88 * BS, duration: 90, yoyo: true }); }
     this.tweens.add({ targets: a, x: pos2.x, y: pos2.y, duration: 180, ease: 'Quad.easeInOut' });
     this.tweens.add({
       targets: b, x: pos1.x, y: pos1.y, duration: 180, ease: 'Quad.easeInOut',
@@ -2657,11 +2658,11 @@ class GameScene extends Phaser.Scene {
     this.triggerHypeBar();
 
     // Drop + refill cycle
-    this.time.delayedCall(170, () => {
+    this.time.delayedCall(200, () => {
       this.dropBubbles();
-      this.time.delayedCall(120, () => {
+      this.time.delayedCall(170, () => {
         this.refillGrid();
-        this.time.delayedCall(330, () => {
+        this.time.delayedCall(400, () => {
           const newMatches = this.findAllMatches();
           if (newMatches.length > 0) {
             this.processMatches(newMatches, depth + 1);
@@ -2782,6 +2783,12 @@ class GameScene extends Phaser.Scene {
     this.hitStop(320, 0.15);
     this.cast.setFever(true);
     this.confettiBurst(34);
+    this.boardWave(1.6);
+    const rays = this.add.graphics().setDepth(53).setPosition(width / 2, cy + 4);
+    rays.fillStyle(P.hotN, 0.9);
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, a2 = a + 0.11; rays.beginPath(); rays.moveTo(0, 0); rays.lineTo(Math.cos(a) * 230, Math.sin(a) * 230); rays.lineTo(Math.cos(a2) * 230, Math.sin(a2) * 230); rays.closePath(); rays.fillPath(); }
+    rays.setScale(0.2).setAlpha(0.9);
+    this.tweens.add({ targets: rays, scale: 1, alpha: 0, angle: 30, duration: 900, ease: 'Quad.easeOut', onComplete: () => rays.destroy() });
     window.audioEngine.playStreakHit(12);
   }
 
@@ -2928,6 +2935,28 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  /** A colour wave: every bubble swells in turn from the left, so the whole board answers a big moment. */
+  boardWave(strength = 1) {
+    if (this.reduce) return;
+    forEachCell((r, c) => {
+      const b = this.grid[r]?.[c];
+      if (!b || !b.active) return;
+      this.tweens.add({ targets: b, scale: BS * (0.95 + 0.16 * strength), duration: 120, delay: c * 24 + r * 5, yoyo: true, ease: 'Sine.easeOut' });
+    });
+  }
+
+  /** The tier-up sticker: FIRE, UNREAL, LEGENDARY. It lands with a hit-stop and a shake, holds, then goes. */
+  showTierBanner(label, tier) {
+    const { width } = VIEW;
+    const cy = GRID_OFFSET_Y + 96;
+    const t = this.add.text(width / 2, cy, label + '!',
+      textStyle('heading', { fontSize: `${46 + tier * 6}px`, color: P.hot, stroke: P.ink, strokeThickness: 9 })).setOrigin(0.5).setDepth(56).setScale(0.4).setAngle(-6);
+    this.tweens.add({ targets: t, scale: 1.2, angle: -3, duration: 220, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: t, scale: 1, duration: 200, delay: 220 });
+    this.tweens.add({ targets: t, alpha: 0, y: cy - 34, duration: 320, delay: 760, ease: 'Quad.easeIn', onComplete: () => t.destroy() });
+    if (tier >= 2) { this.hitStop(150, 0.18); this.shake(180, 0.008); }
+  }
+
   /** Screen shake that respects the player's reduced-motion setting. */
   shake(duration, intensity) {
     if (this.reduce) return;
@@ -3003,7 +3032,7 @@ class GameScene extends Phaser.Scene {
             const dropDist = emptyRow - row;
             this.tweens.add({
               targets: bubble, y: pos.y,
-              duration: 240 + dropDist * 28, ease: 'Back.easeOut',
+              duration: 300 + dropDist * 45, delay: col * 18, ease: 'Back.easeOut',
               onComplete: () => {
                 window.audioEngine.playLand(dropDist * 0.02);
                 if (!this.reduce && bubble.active) this.tweens.add({ targets: bubble, scaleX: 1.06 * BS, scaleY: 0.84 * BS, duration: 70, yoyo: true, ease: 'Quad.easeOut' });
@@ -3034,6 +3063,7 @@ class GameScene extends Phaser.Scene {
     if (!level) {
       this.streakText.setAlpha(0);
       this.adlibText.setAlpha(0);
+      this.lastTier = 0;
       return;
     }
     const tier = STREAK_LEVELS.indexOf(level) + 1;
@@ -3050,6 +3080,8 @@ class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: this.adlibText, alpha: 1, duration: 200, delay: 140 });
 
     this.cast.onStreak(tier);
+    if (tier !== this.lastTier) { this.lastTier = tier; this.showTierBanner(level.label, tier); }
+    if (this.streak >= 5) this.boardWave(this.streak >= 8 ? 1.4 : 1);
 
     this.hypeToken = (this.hypeToken || 0) + 1;
     const token = this.hypeToken;
