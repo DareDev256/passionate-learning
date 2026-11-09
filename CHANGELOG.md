@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.0 (2026-11-09): local progression
+
+Everything here is local and offline: no accounts, no network. Phase 2 of the App Store release.
+- Your save upgrades to version 2 the first time the app opens. Nothing is lost: XP, days, every card's memory, unit progress, tokens and settings carry over, and the old save is kept as a backup. Reset progress clears the backup too.
+- The save now keeps an append-only log of the rounds and fix passes you play, ready for sync later. XP carried over from the old app is flagged as imported and capped for any future leaderboard.
+- First launch is one card: "What brought you here?" (for work, just curious, protect myself, build stuff). One tap starts a round in the matching world. Skip it any time with "Show me around first".
+- Home is one path: the next unit is lit, three more wait ahead, and the nine worlds live a tap deeper on the new Worlds page.
+- Three daily quests (finish a round, clear a review, play a second round) with a token chest worth 5 tokens. One round already counts as your whole day; a missed day resets nothing. A review quest is waived when nothing is due.
+- The recap lists every card you missed with the answer and the why, and "Fix your mistakes" runs a short pass over just those cards. It never changes unit progress.
+- The recap also says what unlocks next and what it needs, for example "67%. 70% opens The dials. Get 5 of 6 right next round."
+- A wrong answer says when the card comes back ("You will see this again tomorrow."). Misses now come back the next day instead of a minute later, and the date shown is the date stored.
+- New Profile page: rank, level, days played, rounds, accuracy per world and 14 achievements.
+- The top bar no longer overflows at 390 px wide.
+
 ## 1.3.0 (2026-11-06): the iOS app
 
 Passionate Learning now runs as a native iPhone app (Capacitor 8) that works fully offline. Bundle ID `ca.stiersolutions.passionatelearning`.

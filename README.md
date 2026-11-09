@@ -27,6 +27,8 @@ It's built in the open. **A new world is one data file**, so anyone who just lea
 
 Plus an arcade break (What's Poppin) you pay for with tokens earned from rounds.
 
+**Progress, all on your device:** one question on first launch picks your first world; Home is one path with the next unit lit; three daily quests and a token chest (one round already counts as your day, and a missed day resets nothing); a recap that lists the cards you missed, says what unlocks next and lets you fix your mistakes; wrong answers say when the card comes back; a profile with rank, days played, accuracy per world and achievements. The save is versioned (`passionate-learning:v2`, an append-only event log) and upgrades an older save once, keeping a backup.
+
 ## How it teaches
 
 - **Problem first.** Every card asks before it explains.
