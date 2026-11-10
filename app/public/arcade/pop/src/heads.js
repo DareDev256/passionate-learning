@@ -135,7 +135,14 @@ function drawHead(ctx, crew, frame, cb) {
       break;
     case 'cheer0': case 'cheer1':
       for (const x of [lx, rx]) { ctx.strokeStyle = eyeInk; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(x - 3.6, eyeY + 1.6); ctx.quadraticCurveTo(x, eyeY - 4, x + 3.6, eyeY + 1.6); ctx.stroke(); }
-      ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(mx - 8.5, my - 3); ctx.quadraticCurveTo(mx, my + 13, mx + 8.5, my - 3); ctx.closePath(); ctx.fill();
+      // Each crew member cheers in their own way, so the dance still tells them apart.
+      ctx.fillStyle = fg;
+      if (trait === 'antenna') { ctx.beginPath(); ctx.ellipse(mx, my + 2, 4.2, 5.8, 0, 0, Math.PI * 2); ctx.fill(); }
+      else if (trait === 'glasses') { ctx.strokeStyle = fg; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx - 7, my - 1); ctx.quadraticCurveTo(mx, my + 8, mx + 7, my - 1); ctx.stroke(); }
+      else if (trait === 'bun') { ctx.strokeStyle = fg; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx - 8, my - 2); ctx.quadraticCurveTo(mx, my + 11, mx + 8, my - 2); ctx.stroke(); ctx.fillStyle = acc; ctx.globalAlpha = 0.7; for (const x of [cx - 14, cx + 14]) { ctx.beginPath(); ctx.arc(x, my - 3, 3, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
+      else if (trait === 'cap') { ctx.beginPath(); ctx.moveTo(mx - 7, my - 3); ctx.quadraticCurveTo(mx + 2, my + 14, mx + 10, my - 4); ctx.closePath(); ctx.fill(); }
+      else if (trait === 'spikes') { ctx.beginPath(); ctx.moveTo(mx - 10, my - 3.5); ctx.quadraticCurveTo(mx, my + 16, mx + 10, my - 3.5); ctx.closePath(); ctx.fill(); }
+      else { ctx.beginPath(); ctx.moveTo(mx - 8.5, my - 3); ctx.quadraticCurveTo(mx, my + 13, mx + 8.5, my - 3); ctx.closePath(); ctx.fill(); }
       break;
     case 'worry':
       for (const x of [lx, rx]) eyeDot(x, eyeY + 0.6, 2.3);

@@ -760,7 +760,7 @@ class GameOverScene extends Phaser.Scene {
       if (!this.reduce) this.tweens.add({ targets: badge, scale: 1.06, duration: 700, yoyo: true, repeat: -1, delay: 2000 });
     }
 
-    const stats = [{ l: 'MOVES', v: `${moves}` }, { l: 'BEST STREAK', v: `${bestStreak}×` }, { l: 'AVG / MOVE', v: `${Math.round(safeDiv(score, moves))}` }, { l: 'BEST CHAIN', v: `×${Math.max(1, bestChain)}` }];
+    const stats = [{ l: 'MOVES', v: `${moves}` }, { l: 'STREAK', v: `${bestStreak}×` }, { l: 'PER MOVE', v: `${Math.round(safeDiv(score, moves))}` }, { l: 'CHAIN', v: `×${Math.max(1, bestChain)}` }];
     if (feverCount > 0) stats.push({ l: 'FEVERS', v: `${feverCount}` });
     const colW = (width - 70) / stats.length;
     stats.forEach((s, i) => {
@@ -1591,7 +1591,7 @@ class GameScene extends Phaser.Scene {
     // ---- TIPS DISPLAY (one line at the bottom) ----
     this.tipIndex = Phaser.Math.Between(0, TIPS.length - 1);
     this.tipText = this.add.text(width / 2, height - 9, TIPS[this.tipIndex],
-      textStyle('label', { fontSize: '13px', letterSpacing: 0, color: P.muted, fontStyle: 'italic' }),
+      textStyle('label', { fontSize: '13px', letterSpacing: 0, color: P.text2, fontStyle: 'italic' }),
     ).setOrigin(0.5, 1).setDepth(1);
     this.time.addEvent({
       delay: 8000, loop: true,
@@ -1856,8 +1856,8 @@ class GameScene extends Phaser.Scene {
             const t = tell && tell.cells.get(`${r},${c}`);
             if (t && mood === 'idle') {
               const k = 0.5 + 0.5 * Math.sin(time / 190);
-              if (t.kind === 'mover') { mood = 'peek'; ox = t.dx * 3.2 * k; dy = t.dy * 3.2 * k; ang = t.dx * 6 * k; }
-              else { look = t.dx || (t.dy ? (c % 2 ? 1 : -1) : 0); ang = (t.dx || t.dy) * 4 * k; dy = t.dy * 2 * k; ox = t.dx * 2 * k; if (!look) mood = 'peek'; }
+              if (t.kind === 'mover') { mood = 'peek'; ox = t.dx * 5 * k; dy = t.dy * 5 * k; ang = (t.dx || t.dy) * 10 * k; }
+              else { look = t.dx || (t.dy ? (c % 2 ? 1 : -1) : 0); ang = (t.dx || t.dy) * 7 * k; dy = t.dy * 3 * k; ox = t.dx * 3 * k; if (!look) mood = 'peek'; }
             }
             if (this.panic && mood === 'idle' && ((r * 7 + c * 3 + Math.floor(time / 700)) % 5 === 0)) mood = 'worry';
             if (this.panic && !this.reduce) ang += Math.sin(time / 38 + r + c) * 1.4;
@@ -1971,7 +1971,8 @@ class GameScene extends Phaser.Scene {
     if (frac > 0) {
       const w = Math.max(14, frac * (fb.w - 6));
       const beatK = fever ? 0.78 + 0.22 * Math.sin(time * 0.016) : 1;
-      g.fillStyle(P.hotN, beatK);
+      const fillHex = contrastPick(P.card, [P.hot, P.ink]);
+      g.fillStyle(_toInt(fillHex), beatK);
       g.fillRoundedRect(fb.x + 3, fb.y + 3, w, fb.h - 6, 7);
     }
     g.lineStyle(3, P.inkN, 1); g.strokeRoundedRect(fb.x, fb.y, fb.w, fb.h, 10);
@@ -1987,7 +1988,7 @@ class GameScene extends Phaser.Scene {
     }
 
     // Text sits on the card or on the hot fill: pick whichever reads on what is under it.
-    const onHot = contrastPick(P.hot, ['#0a0a0a', '#ffffff']), onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
+    const onHot = contrastPick(contrastPick(P.card, [P.hot, P.ink]), ['#0a0a0a', '#ffffff']), onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
     const labelCovered = frac * (fb.w - 6) > 76;
     this.feverLabelText.setText(fever ? 'FEVER' : 'HOT');
     this.feverLabelText.setColor(labelCovered ? onHot : onCard);
@@ -2088,8 +2089,9 @@ class GameScene extends Phaser.Scene {
   showAchievementToast(ach, delay = 0) {
     const toastW = 214;
     const toastX = VIEW.width - 18 - toastW / 2;
-    const toastY = this.footY + 104;
+    const toastY = this.footY + 98;
     if (this.modeText) this.modeText.setAlpha(0);
+    if (this.tipText) this.tipText.setAlpha(0);
     const container = this.add.container(toastX + 40, toastY).setDepth(70).setAlpha(0);
     const bg = this.add.graphics();
     bg.fillStyle(P.inkN, 1); bg.fillRoundedRect(-toastW / 2, -15, toastW, 38, 10);
@@ -2101,7 +2103,7 @@ class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: container, x: toastX, alpha: 1, duration: 260, delay, ease: 'Back.easeOut' });
     this.tweens.add({
       targets: container, x: toastX + 40, alpha: 0, duration: 260, delay: delay + 2400, ease: 'Quad.easeIn',
-      onComplete: () => { container.destroy(true); if (this.modeText && this.modeText.active) this.modeText.setAlpha(1); },
+      onComplete: () => { container.destroy(true); if (this.modeText && this.modeText.active) this.modeText.setAlpha(1); if (this.tipText && this.tipText.active) this.tipText.setAlpha(1); },
     });
     if (window.audioEngine?.initialized) {
       const t = window.audioEngine.ctx.currentTime + delay / 1000;
@@ -2484,7 +2486,13 @@ class GameScene extends Phaser.Scene {
     this.spawnSwapTrail(a, pos1, pos2);
     this.spawnSwapTrail(b, pos2, pos1);
 
-    if (!this.reduce) { this.tweens.add({ targets: a, scaleX: 1.12 * BS, scaleY: 0.88 * BS, duration: 90, yoyo: true }); this.tweens.add({ targets: b, scaleX: 1.12 * BS, scaleY: 0.88 * BS, duration: 90, yoyo: true }); }
+    if (!this.reduce) {
+      // One head hops over, the other slides under: stretch along the move, a tilt, and a bigger hop for the one on top.
+      const horiz = r1 === r2;
+      a.setDepth(32); b.setDepth(31);
+      this.tweens.add({ targets: a, scaleX: (horiz ? 1.2 : 0.88) * BS, scaleY: (horiz ? 0.88 : 1.2) * BS, angle: (c2 - c1 || r2 - r1) * 8, duration: 90, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { a.angle = 0; } });
+      this.tweens.add({ targets: b, scaleX: (horiz ? 1.12 : 0.92) * BS, scaleY: (horiz ? 0.92 : 1.12) * BS, angle: -(c2 - c1 || r2 - r1) * 6, duration: 90, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { b.angle = 0; } });
+    }
     this.tweens.add({ targets: a, x: pos2.x, y: pos2.y, duration: 180, ease: 'Quad.easeInOut' });
     this.tweens.add({
       targets: b, x: pos1.x, y: pos1.y, duration: 180, ease: 'Quad.easeInOut',
@@ -2806,7 +2814,7 @@ class GameScene extends Phaser.Scene {
 
     // ---- CASCADE CHAIN BANNER ----
     if (depth >= 2) this.showChainBanner(depth);
-    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, 29); }
+    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, -4); }
 
     // ---- LIVE MILESTONES ----
     this.checkMilestones();
@@ -2834,19 +2842,18 @@ class GameScene extends Phaser.Scene {
     this.triggerHypeBar();
 
     // Drop + refill cycle
-    this.time.delayedCall(200, () => {
+    // Heads above the gap drop and the new ones fall in at the same time, so the board never sits with holes in it.
+    this.time.delayedCall(170, () => {
       this.dropBubbles();
-      this.time.delayedCall(170, () => {
-        this.refillGrid();
-        this.time.delayedCall(400, () => {
-          const newMatches = this.findAllMatches();
-          if (newMatches.length > 0) {
-            this.processMatches(newMatches, depth + 1);
-          } else {
-            if (!this.hasPossibleMoves()) this.reshuffleGrid();
-            this.isProcessing = false;
-          }
-        });
+      this.refillGrid();
+      this.time.delayedCall(480, () => {
+        const newMatches = this.findAllMatches();
+        if (newMatches.length > 0) {
+          this.processMatches(newMatches, depth + 1);
+        } else {
+          if (!this.hasPossibleMoves()) this.reshuffleGrid();
+          this.isProcessing = false;
+        }
       });
     });
   }
@@ -2939,8 +2946,9 @@ class GameScene extends Phaser.Scene {
       onComplete: () => this.tweens.add({ targets: sub, alpha: 0, y: sub.y - 24, duration: 360, delay: 760, ease: 'Quad.easeIn', onComplete: () => sub.destroy() }),
     });
     this.screenFlash(P.hotN);
-    this.shake(300, 0.016);
+    this.shake(260, 0.009);
     this.hitStop(300, 0.12);
+    this.setPageGround(P.inkIsLight ? P.bg : P.hot);
     this.crewCheer(1100);
     this.confettiBurst(26);
     this.boardWave(1.8);
@@ -2953,6 +2961,9 @@ class GameScene extends Phaser.Scene {
     window.audioEngine.playStreakHit(12);
     this.updateMultiplierBadge();
   }
+
+  /** The page behind the canvas follows the fever ground too, so the letterbox never shows a different colour. */
+  setPageGround(hex) { try { document.documentElement.style.background = hex; document.body.style.background = hex; } catch (_) { /* no DOM */ } }
 
   /** On the fever ground the small grey labels lose contrast, so they switch to the full ink colour. */
   setHudInk(on) {
@@ -3020,6 +3031,7 @@ class GameScene extends Phaser.Scene {
     this.feverMeter = 0;
     const res = this.feverTally.end();
     this.setHudInk(false);
+    this.time.delayedCall(450, () => this.setPageGround(P.bg));
     this.updateMultiplierBadge();
 
     // The payoff: a plate lands on the board with what the fever earned, counting up, while the crew cheers once more.
@@ -3032,7 +3044,8 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(P.cardN, 1); g.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 20);
     g.lineStyle(5, P.inkN, 1); g.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, 20);
     const onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
-    const head = this.add.text(0, -bh / 2 + 28, res.total > 0 ? 'FEVER PAYOFF' : 'FEVER OVER', textStyle('badge', { fontSize: '20px', color: onCard, stroke: '', strokeThickness: 0, letterSpacing: 4 })).setOrigin(0.5);
+    const word = res.total >= 2500 ? 'MEGA FEVER' : res.total >= 1000 ? 'HOT FEVER' : res.total > 0 ? 'FEVER PAYOFF' : 'FEVER OVER';
+    const head = this.add.text(0, -bh / 2 + 28, word, textStyle('badge', { fontSize: '20px', color: onCard, stroke: '', strokeThickness: 0, letterSpacing: 4 })).setOrigin(0.5);
     const num = this.add.text(0, -2, res.total > 0 ? '+0' : '', textStyle('heading', { fontSize: '76px', color: P.hot, stroke: P.ink, strokeThickness: 9 })).setOrigin(0.5);
     const line = this.add.text(0, bh / 2 - 30, res.total > 0 ? `${res.pops} heads popped in fever` : 'Match more to go again', textStyle('stat', { fontSize: '16px', color: onCard, fontStyle: 'bold' })).setOrigin(0.5);
     box.add([g, head, num, line]);
@@ -3042,16 +3055,20 @@ class GameScene extends Phaser.Scene {
         onUpdate: (tw) => { num.setText(`+${Math.floor(tw.getValue()).toLocaleString()}`); },
         onComplete: () => { num.setText(`+${res.total.toLocaleString()}`); if (!this.reduce) this.tweens.add({ targets: num, scale: 1.25, duration: 110, yoyo: true }); } });
       this.crewCheer(1000);
-      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, 29); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
+      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, -4); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
       window.audioEngine.playStreakHit(12);
     }
-    this.tweens.add({ targets: box, alpha: 0, y: cy - 30, duration: 320, delay: 1900, ease: 'Quad.easeIn', onComplete: () => box.destroy() });
+    // The plate then flies up into the SCORE and the score thumps: the fever's points visibly bank.
+    const bank = () => {
+      this.tweens.add({ targets: box, x: 60, y: 30, scale: 0.1, alpha: 0, duration: 380, ease: 'Cubic.easeIn', onComplete: () => { box.destroy(); if (res.total > 0) { this.bumpScore(400); this.fx.stars(60, 40, 8, 160, 0.8); window.audioEngine.playStreakHit(8); } } });
+    };
+    if (this.reduce) this.time.delayedCall(1700, () => box.destroy()); else this.time.delayedCall(1800, bank);
   }
 
   /** Mini cheering heads rain from the top: the payoff for fever and big moments. Skipped under reduced motion. */
   confettiBurst(n = 30) {
     if (this.reduce) return;
-    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, 29);
+    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, -4);
   }
 
   /**
@@ -3095,9 +3112,9 @@ class GameScene extends Phaser.Scene {
   /** The moment a head bursts: ink splat frames, drops, stars and a ring, scaled by how big the match or chain is. */
   crewImpact(x, y, crew, power, row, col) {
     this.tallyPop(crew, 1);
-    const size = 0.9 + 0.32 * power;
+    const size = 1.1 + 0.4 * power;
     this.fx.splat(x, y, crew, size);
-    this.fx.drops(x, y, crew, this.reduce ? 3 : Math.round(4 + power * 3 + (this.feverActive ? 3 : 0)), 120 + power * 50, 0.9 + power * 0.2);
+    this.fx.drops(x, y, crew, this.reduce ? 3 : Math.round(6 + power * 4 + (this.feverActive ? 3 : 0)), 150 + power * 60, 1.1 + power * 0.25);
     if (!this.reduce && (power >= 1.3 || this.feverActive)) this.fx.stars(x, y, Math.round(2 + power * 2), 190 + power * 40, 0.8 + power * 0.25);
     this.spawnPopRing(x, y, COLORS[crew]);
     this.nudgeNeighbours(row, col, x, y);
@@ -3164,11 +3181,12 @@ class GameScene extends Phaser.Scene {
   /** The tier-up sticker: FIRE, UNREAL, LEGENDARY. It lands with a hit-stop and a shake, holds, then goes. */
   showTierBanner(label, tier) {
     const { width } = VIEW;
-    const cy = GRID_OFFSET_Y + 96;
+    const cy = GRID_OFFSET_Y + 70;
     const t = this.add.text(width / 2, cy, label + '!',
       textStyle('heading', { fontSize: `${46 + tier * 6}px`, color: P.hot, stroke: P.ink, strokeThickness: 9 })).setOrigin(0.5).setDepth(56).setScale(0.4).setAngle(-6);
-    this.tweens.add({ targets: t, scale: 1.2, angle: -3, duration: 220, ease: 'Back.easeOut' });
-    this.tweens.add({ targets: t, scale: 1, duration: 200, delay: 220 });
+    const fit = Math.min(1, 380 / (t.width * 1.2)); // a long word like LEGENDARY must never run off the screen
+    this.tweens.add({ targets: t, scale: 1.2 * fit, angle: -3, duration: 220, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: t, scale: fit, duration: 200, delay: 220 });
     this.tweens.add({ targets: t, alpha: 0, y: cy - 34, duration: 320, delay: 760, ease: 'Quad.easeIn', onComplete: () => t.destroy() });
     if (tier >= 2) { this.hitStop(150, 0.18); this.shake(180, 0.008); }
   }
@@ -3194,13 +3212,16 @@ class GameScene extends Phaser.Scene {
   showChainBanner(depth) {
     const { width } = VIEW;
     const cx = width / 2;
-    const cy = GRID_OFFSET_Y + 150;
+    const cy = GRID_OFFSET_Y + 215;
     const label = `CHAIN ×${depth}`;
-    const fontSize = Math.min(34 + depth * 4, 54);
+    const fontSize = Math.min(32 + depth * 6, 60);
+    const mega = depth >= 4;
+    const fill = mega ? P.inkN : P.hotN;
+    const textCol = mega ? P.hot : P.ink;
 
     const burst = this.add.graphics().setDepth(28);
-    burst.fillStyle(P.hotN, 0.95);
-    const spikes = 14, rIn = 52 + depth * 3, rOut = 96 + depth * 8;
+    burst.fillStyle(fill, 0.97);
+    const spikes = 12 + depth * 2, rIn = 50 + depth * 7, rOut = 88 + depth * 22;
     burst.beginPath();
     for (let i = 0; i < spikes * 2; i++) {
       const a = (i / (spikes * 2)) * Math.PI * 2;
@@ -3208,26 +3229,43 @@ class GameScene extends Phaser.Scene {
       burst[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r);
     }
     burst.closePath(); burst.fillPath();
-    burst.lineStyle(3, P.inkN, 1); burst.strokePath();
-    burst.setPosition(cx, cy).setScale(0.2).setAlpha(0.95);
+    burst.lineStyle(4, mega ? P.hotN : P.inkN, 1); burst.strokePath();
+    burst.setPosition(cx, cy).setScale(0.2).setAlpha(0.97);
 
     const main = this.add.text(cx, cy, label,
-      textStyle('popup', { fontSize: `${fontSize}px`, color: P.ink, stroke: P.bg, strokeThickness: 7, fontStyle: 'bold italic' })
+      textStyle('popup', { fontSize: `${fontSize}px`, color: textCol, stroke: mega ? P.ink : P.bg, strokeThickness: 7, fontStyle: 'bold italic' })
     ).setOrigin(0.5).setDepth(30).setScale(0.3);
     const bonus = this.add.text(cx, cy + fontSize * 0.75, `+${(depth - 1) * 25} CHAIN BONUS`,
-      textStyle('badge', { fontSize: '13px', color: P.ink, stroke: P.bg, strokeThickness: 4 })
+      textStyle('badge', { fontSize: '14px', color: textCol, stroke: mega ? P.ink : P.bg, strokeThickness: 4 })
     ).setOrigin(0.5).setAlpha(0).setDepth(30);
 
     this.tweens.add({ targets: [main, burst], scale: 1, duration: 320, ease: 'Back.easeOut' });
     if (!this.reduce) this.tweens.add({ targets: burst, angle: 24, duration: 1100, ease: 'Sine.easeOut' });
     this.tweens.add({ targets: bonus, alpha: 1, y: cy + fontSize * 0.68, duration: 250, delay: 150, ease: 'Quad.easeOut' });
+    if (depth >= 3) this.chainShockwave(cx, cy, depth);
     if (depth >= 3) this.shake(200, 0.006 + depth * 0.002);
+    if (mega) this.screenFlash(P.hotN);
 
     this.tweens.add({
       targets: [main, burst, bonus],
       alpha: 0, y: '-=26', scale: 1.15,
-      duration: 500, delay: 800, ease: 'Quad.easeIn',
+      duration: 500, delay: 900, ease: 'Quad.easeIn',
       onComplete: () => { main.destroy(); burst.destroy(); bonus.destroy(); },
+    });
+  }
+
+  /** From chain 3 on, a ring of ink sweeps across the whole board and every head leans away from the middle. */
+  chainShockwave(cx, cy, depth) {
+    if (this.reduce) return;
+    const ring = this.add.graphics().setDepth(27).setPosition(cx, cy);
+    ring.lineStyle(10, P.inkN, 1); ring.strokeCircle(0, 0, 40);
+    ring.lineStyle(5, P.hotN, 1); ring.strokeCircle(0, 0, 52);
+    this.tweens.add({ targets: ring, scale: 5 + depth, alpha: 0, duration: 520 + depth * 40, ease: 'Quad.easeOut', onComplete: () => ring.destroy() });
+    forEachCell((r, c) => {
+      const b = this.grid[r]?.[c];
+      if (!b || !b.active) return;
+      const d = Math.hypot(b.x - cx, b.y - cy);
+      this.time.delayedCall(Math.min(420, d * 0.9), () => { this.setMood(b, 'peek', 300); });
     });
   }
 
