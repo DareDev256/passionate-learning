@@ -2806,7 +2806,7 @@ class GameScene extends Phaser.Scene {
 
     // ---- CASCADE CHAIN BANNER ----
     if (depth >= 2) this.showChainBanner(depth);
-    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, 52); }
+    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, 29); }
 
     // ---- LIVE MILESTONES ----
     this.checkMilestones();
@@ -3042,7 +3042,7 @@ class GameScene extends Phaser.Scene {
         onUpdate: (tw) => { num.setText(`+${Math.floor(tw.getValue()).toLocaleString()}`); },
         onComplete: () => { num.setText(`+${res.total.toLocaleString()}`); if (!this.reduce) this.tweens.add({ targets: num, scale: 1.25, duration: 110, yoyo: true }); } });
       this.crewCheer(1000);
-      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, 57); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
+      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, 29); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
       window.audioEngine.playStreakHit(12);
     }
     this.tweens.add({ targets: box, alpha: 0, y: cy - 30, duration: 320, delay: 1900, ease: 'Quad.easeIn', onComplete: () => box.destroy() });
@@ -3051,7 +3051,7 @@ class GameScene extends Phaser.Scene {
   /** Mini cheering heads rain from the top: the payoff for fever and big moments. Skipped under reduced motion. */
   confettiBurst(n = 30) {
     if (this.reduce) return;
-    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, 52);
+    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, 29);
   }
 
   /**
