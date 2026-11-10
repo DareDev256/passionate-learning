@@ -1957,6 +1957,12 @@ class GameScene extends Phaser.Scene {
    *
    * @param {number} time — game clock in ms (drives pulse/glow animation)
    */
+  /** The HOT meter fill: the accent, unless the accent blends into the card (Redline), then the ink. */
+  meterFillHex() {
+    const lum = (h) => { const n = parseInt(h.slice(1), 16); return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
+    return Math.abs(lum(P.hot) - lum(P.card)) >= 0.28 ? P.hot : P.ink;
+  }
+
   renderFeverMeter(time) {
     if (!this.feverGfx) return;
     const g = this.feverGfx;
@@ -1971,7 +1977,7 @@ class GameScene extends Phaser.Scene {
     if (frac > 0) {
       const w = Math.max(14, frac * (fb.w - 6));
       const beatK = fever ? 0.78 + 0.22 * Math.sin(time * 0.016) : 1;
-      const fillHex = contrastPick(P.card, [P.hot, P.ink]);
+      const fillHex = this.meterFillHex();
       g.fillStyle(_toInt(fillHex), beatK);
       g.fillRoundedRect(fb.x + 3, fb.y + 3, w, fb.h - 6, 7);
     }
@@ -1988,7 +1994,7 @@ class GameScene extends Phaser.Scene {
     }
 
     // Text sits on the card or on the hot fill: pick whichever reads on what is under it.
-    const onHot = contrastPick(contrastPick(P.card, [P.hot, P.ink]), ['#0a0a0a', '#ffffff']), onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
+    const onHot = contrastPick(this.meterFillHex(), ['#0a0a0a', '#ffffff']), onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
     const labelCovered = frac * (fb.w - 6) > 76;
     this.feverLabelText.setText(fever ? 'FEVER' : 'HOT');
     this.feverLabelText.setColor(labelCovered ? onHot : onCard);
@@ -2969,6 +2975,8 @@ class GameScene extends Phaser.Scene {
   setHudInk(on) {
     const c = on ? P.ink : P.muted;
     [this.scoreLabel, this.timerSub, this.tipText, this.modeText, this.bestStreakText].forEach((t) => { if (t && t.active) t.setColor(c); });
+    if (this.tierText) this.tierText.setColor(on ? P.ink : P.hot);
+    if (this.streakCounter) { this.streakCounter.setX(on ? 104 : 82); if (on) this.streakCounter.setColor(P.ink); }
   }
 
   /** Once per beat of the fever groove: the board kicks, a drum plays, the crew throws a few stars, now and then shouts. */
@@ -3323,6 +3331,7 @@ class GameScene extends Phaser.Scene {
     }
     const tier = STREAK_LEVELS.indexOf(level) + 1;
     this.tierText.setText(`${level.label}!`);
+    this.tierText.setColor(this.feverActive ? P.ink : P.hot);
     this.tierText.setScale(0.5);
     this.tweens.add({ targets: this.tierText, scale: 1, duration: 260, ease: 'Back.easeOut' });
 
@@ -3353,7 +3362,8 @@ class GameScene extends Phaser.Scene {
   updateStreakUI() {
     if (this.streak > 1) {
       this.streakCounter.setText(`STREAK ${this.streak}×`);
-      this.streakCounter.setColor(this.streak >= 5 ? P.hot : P.ink);
+      this.streakCounter.setColor(this.streak >= 5 && !this.feverActive ? P.hot : P.ink);
+      this.streakCounter.setX(this.feverActive ? 104 : 82);
     } else {
       this.streakCounter.setText('');
     }
