@@ -1454,8 +1454,8 @@ class GameScene extends Phaser.Scene {
     this.fx = new PopFx(this);
     this.feverBg = this.add.container(0, 0).setDepth(-19).setAlpha(0);
     {
-      const feverGround = P.inkIsLight ? P.bg : P.hot;
-      const rayCol = P.inkIsLight ? mixHex(P.bg, P.hot, 0.3) : mixHex(P.hot, P.ink, 0.13);
+      const feverGround = this.feverGroundHex();
+      const rayCol = P.inkIsLight ? mixHex(P.bg, P.hot, 0.3) : (feverGround === P.hot ? mixHex(P.hot, P.ink, 0.13) : mixHex(P.bg, P.ink, 0.35));
       const g = this.add.graphics();
       g.fillStyle(_toInt(feverGround), 1); g.fillRect(0, 0, width, height);
       const rays = this.add.graphics().setPosition(width / 2, BOARD_Y + 280);
@@ -1481,14 +1481,9 @@ class GameScene extends Phaser.Scene {
     const boardX = GRID_OFFSET_X - 8, boardY = BOARD_Y;
     const boardW = GRID_COLS * CELL + 16, boardH = GRID_ROWS * CELL + 22;
     this.boardGfx = this.add.graphics().setDepth(-5);
-    const board = this.boardGfx;
-    board.fillStyle(P.inkN, 1);
-    board.fillRoundedRect(boardX, boardY + 4, boardW, boardH, 14);
-    board.fillStyle(P.cardN, 1);
-    board.fillRoundedRect(boardX, boardY, boardW, boardH, 14);
-    board.lineStyle(3, P.inkN, 1);
-    board.strokeRoundedRect(boardX, boardY, boardW, boardH, 14);
     this.boardRect = { x: boardX, y: boardY, w: boardW, h: boardH };
+    this.hudInk = P.ink;
+    this.drawBoard(false);
     this.boardMid = { x: boardX + boardW / 2, y: boardY + boardH / 2 };
 
     // ---- CREW TALLY STRIP: who has popped how many. The legend and the scoreboard in one. ----
@@ -1855,7 +1850,7 @@ class GameScene extends Phaser.Scene {
             if (sw && sw !== b && Math.abs(sw.getData('col') - c) <= 2 && Math.abs(sw.getData('row') - r) <= 2) look = Math.sign(sw.getData('col') - c) || (c % 2 ? 1 : -1);
             const t = tell && tell.cells.get(`${r},${c}`);
             if (t && mood === 'idle') {
-              const k = 0.5 + 0.5 * Math.sin(time / 190);
+              const k = 0.55 + 0.45 * Math.sin(time / 210);
               if (t.kind === 'mover') { mood = 'peek'; ox = t.dx * 5 * k; dy = t.dy * 5 * k; ang = (t.dx || t.dy) * 10 * k; }
               else { look = t.dx || (t.dy ? (c % 2 ? 1 : -1) : 0); ang = (t.dx || t.dy) * 7 * k; dy = t.dy * 3 * k; ox = t.dx * 3 * k; if (!look) mood = 'peek'; }
             }
@@ -1998,7 +1993,7 @@ class GameScene extends Phaser.Scene {
     const labelCovered = frac * (fb.w - 6) > 76;
     this.feverLabelText.setText(fever ? 'FEVER' : 'HOT');
     this.feverLabelText.setColor(labelCovered ? onHot : onCard);
-    if (fever) { this.feverPctText.setText(`${Math.ceil(this.feverTimer / 1000)}s`); this.feverPctText.setColor(frac > 0.94 ? onHot : onCard); }
+    if (fever) { this.feverPctText.setText(`+${this.feverTally.total.toLocaleString()}  ${Math.ceil(this.feverTimer / 1000)}s`); this.feverPctText.setColor(frac > 0.94 ? onHot : onCard); }
     else if (frac > 0.04) { this.feverPctText.setText(`${Math.floor(frac * 100)}%`); this.feverPctText.setColor(frac > 0.94 ? onHot : onCard); }
     else this.feverPctText.setText('');
   }
@@ -2051,7 +2046,7 @@ class GameScene extends Phaser.Scene {
     const low = pct <= 0.25;
 
     this.timerText.setText(`${this.timeLeft}`);
-    this.timerText.setColor(low ? P.hot : P.ink);
+    this.timerText.setColor(this.feverActive ? this.hudInk : low ? P.hot : P.ink);
 
     // Timer bar: ink, then the accent in the last quarter.
     this.timerBg.clear();
@@ -2187,6 +2182,7 @@ class GameScene extends Phaser.Scene {
     window.audioEngine.stopBgBeat();
     this.tweens.timeScale = 1; this.time.timeScale = 1;
     this.panic = false;
+    this.scoreText.setText(this.score.toLocaleString());
     // The crew takes a bow (or winces) before the result screen.
     { const good = this.score >= 1500; forEachCell((r, c) => { const b = this.grid[r]?.[c]; if (b && b.active) this.setMood(b, good ? ((r + c) % 2 ? 'cheer1' : 'cheer0') : 'worry', 1200); }); }
 
@@ -2499,9 +2495,8 @@ class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: a, scaleX: (horiz ? 1.2 : 0.88) * BS, scaleY: (horiz ? 0.88 : 1.2) * BS, angle: (c2 - c1 || r2 - r1) * 8, duration: 90, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { a.angle = 0; } });
       this.tweens.add({ targets: b, scaleX: (horiz ? 1.12 : 0.92) * BS, scaleY: (horiz ? 0.92 : 1.12) * BS, angle: -(c2 - c1 || r2 - r1) * 6, duration: 90, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { b.angle = 0; } });
     }
-    this.tweens.add({ targets: a, x: pos2.x, y: pos2.y, duration: 180, ease: 'Quad.easeInOut' });
-    this.tweens.add({
-      targets: b, x: pos1.x, y: pos1.y, duration: 180, ease: 'Quad.easeInOut',
+    this.slideHead(a, pos1, pos2, 200, -13);
+    this.slideHead(b, pos2, pos1, 200, 5, {
       onComplete: () => {
         const matches = this.findAllMatches();
 
@@ -2513,9 +2508,8 @@ class GameScene extends Phaser.Scene {
           this.grid[r1][c1] = a; this.grid[r2][c2] = b;
           a.setData('row', r1); a.setData('col', c1);
           b.setData('row', r2); b.setData('col', c2);
-          this.tweens.add({ targets: a, x: pos1.x, y: pos1.y, duration: 180, ease: 'Quad.easeInOut' });
-          this.tweens.add({
-            targets: b, x: pos2.x, y: pos2.y, duration: 180, ease: 'Quad.easeInOut',
+          this.slideHead(a, pos2, pos1, 200, 5);
+          this.slideHead(b, pos1, pos2, 200, -13, {
             onComplete: () => {
               this.streak = 0;
               this.updateStreakUI();
@@ -2533,6 +2527,20 @@ class GameScene extends Phaser.Scene {
     });
 
     this.selected = null;
+  }
+
+  /** Slide a head from one cell to the next along a small arc (negative lift = over the top), so swapped heads pass around each other. */
+  slideHead(h, from, to, ms, lift, cb) {
+    if (this.reduce) { h.setPosition(to.x, to.y); if (cb && cb.onComplete) this.time.delayedCall(ms * 0.5, cb.onComplete); return; }
+    this.tweens.addCounter({
+      from: 0, to: 1, duration: ms, ease: 'Sine.easeInOut',
+      onUpdate: (tw) => {
+        if (!h.active) return;
+        const t = tw.getValue();
+        h.setPosition(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t + Math.sin(Math.PI * t) * lift);
+      },
+      onComplete: () => { if (h.active) h.setPosition(to.x, to.y); if (cb && cb.onComplete) cb.onComplete(); },
+    });
   }
 
   spawnSwapTrail(bubble, from, to) {
@@ -2795,8 +2803,8 @@ class GameScene extends Phaser.Scene {
     this.score = safeScore(this.score + points);
     this.feverTally.add(points, totalPopped);
     this.totalPopped += totalPopped;
-    this.scoreText.setText(this.score.toLocaleString());
-    this.bumpScore(points);
+    // During fever the HUD score holds still while the fever's points pile up beside the meter; the payoff banks them.
+    if (!this.feverActive) { this.scoreText.setText(this.score.toLocaleString()); this.bumpScore(points); }
 
     // Score popup — append fever indicator when active
     if (matchGroups[0] && matchGroups[0][0]) {
@@ -2820,7 +2828,7 @@ class GameScene extends Phaser.Scene {
 
     // ---- CASCADE CHAIN BANNER ----
     if (depth >= 2) this.showChainBanner(depth);
-    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, -4); }
+    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, BOARD_Y - 20, VIEW.height, -4); }
 
     // ---- LIVE MILESTONES ----
     this.checkMilestones();
@@ -2927,8 +2935,10 @@ class GameScene extends Phaser.Scene {
     this.feverTimer = 6000; // 6 seconds base duration
     this.feverMeter = 100;
     this.feverCount++;
+    this.clearBanners();
     this.feverClock = 0; this.lastBeat = -1;
     this.feverTally.start();
+    this.scoreShown = Math.max(0, this.score - 0);
     this.setHudInk(true);
 
     const { width } = VIEW;
@@ -2951,10 +2961,10 @@ class GameScene extends Phaser.Scene {
       targets: sub, alpha: 1, duration: 180, delay: 180,
       onComplete: () => this.tweens.add({ targets: sub, alpha: 0, y: sub.y - 24, duration: 360, delay: 760, ease: 'Quad.easeIn', onComplete: () => sub.destroy() }),
     });
-    this.screenFlash(P.hotN);
+    this.screenFlash(P.inkIsLight ? P.hotN : 0xffffff);
     this.shake(260, 0.009);
     this.hitStop(300, 0.12);
-    this.setPageGround(P.inkIsLight ? P.bg : P.hot);
+    this.setPageGround(this.feverGroundHex());
     this.crewCheer(1100);
     this.confettiBurst(26);
     this.boardWave(1.8);
@@ -2968,15 +2978,49 @@ class GameScene extends Phaser.Scene {
     this.updateMultiplierBadge();
   }
 
+  /** The board panel: the card colour, tinted toward the fever ground while fever runs so the board itself changes too. */
+  drawBoard(fever) {
+    const { x, y, w, h } = this.boardRect;
+    const fill = fever ? _toInt(mixHex(P.card, this.feverGroundHex(), 0.3)) : P.cardN;
+    const g = this.boardGfx;
+    g.clear();
+    g.fillStyle(P.inkN, 1); g.fillRoundedRect(x, y + 4, w, h, 14);
+    g.fillStyle(fill, 1); g.fillRoundedRect(x, y, w, h, 14);
+    g.lineStyle(3, P.inkN, 1); g.strokeRoundedRect(x, y, w, h, 14);
+  }
+
+  /** The fever ground: the accent, unless the accent is near white (Redline), then true black so the ground still changes. */
+  feverGroundHex() {
+    if (P.inkIsLight) return P.bg;
+    const n = parseInt(P.hot.slice(1), 16);
+    const l = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+    return l > 0.85 ? '#0a0a0a' : P.hot;
+  }
+
   /** The page behind the canvas follows the fever ground too, so the letterbox never shows a different colour. */
   setPageGround(hex) { try { document.documentElement.style.background = hex; document.body.style.background = hex; } catch (_) { /* no DOM */ } }
 
   /** On the fever ground the small grey labels lose contrast, so they switch to the full ink colour. */
   setHudInk(on) {
-    const c = on ? P.ink : P.muted;
+    const ground = on ? this.feverGroundHex() : P.bg;
+    const onG = on ? contrastPick(ground, ['#0a0a0a', '#ffffff']) : P.ink;
+    this.hudInk = onG;
+    const c = on ? onG : P.muted;
     [this.scoreLabel, this.timerSub, this.tipText, this.modeText, this.bestStreakText].forEach((t) => { if (t && t.active) t.setColor(c); });
-    if (this.tierText) this.tierText.setColor(on ? P.ink : P.hot);
-    if (this.streakCounter) { this.streakCounter.setX(on ? 104 : 82); if (on) this.streakCounter.setColor(P.ink); }
+    [this.scoreText, this.timerText].forEach((t) => { if (t && t.active) t.setColor(on ? onG : P.ink); });
+    if (this.tierText) this.tierText.setColor(on ? onG : P.hot);
+    if (this.streakCounter) { this.streakCounter.setX(on ? 104 : 82); this.streakCounter.setColor(on ? onG : P.ink); }
+    this.drawBoard(on);
+  }
+
+  /** Count the HUD score up from what it showed during fever to the real score, thumping on the way. */
+  bankScore(from) {
+    const to = this.score;
+    this.scoreHeld = false;
+    if (this.reduce || !(to > from)) { this.scoreText.setText(to.toLocaleString()); this.scoreShown = to; return; }
+    this.tweens.addCounter({ from, to, duration: 650, ease: 'Cubic.easeOut',
+      onUpdate: (tw) => { this.scoreShown = Math.floor(tw.getValue()); this.scoreText.setText(this.scoreShown.toLocaleString()); this.scoreText.setScale(1.12); },
+      onComplete: () => { this.scoreShown = to; this.scoreText.setText(to.toLocaleString()); this.tweens.add({ targets: this.scoreText, scale: 1.4, duration: 120, yoyo: true, ease: 'Quad.easeOut' }); } });
   }
 
   /** Once per beat of the fever groove: the board kicks, a drum plays, the crew throws a few stars, now and then shouts. */
@@ -3063,12 +3107,17 @@ class GameScene extends Phaser.Scene {
         onUpdate: (tw) => { num.setText(`+${Math.floor(tw.getValue()).toLocaleString()}`); },
         onComplete: () => { num.setText(`+${res.total.toLocaleString()}`); if (!this.reduce) this.tweens.add({ targets: num, scale: 1.25, duration: 110, yoyo: true }); } });
       this.crewCheer(1000);
-      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, -4); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
+      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, BOARD_Y - 20, VIEW.height, -4); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
       window.audioEngine.playStreakHit(12);
     }
     // The plate then flies up into the SCORE and the score thumps: the fever's points visibly bank.
+    const shownFrom = this.scoreShown;
     const bank = () => {
-      this.tweens.add({ targets: box, x: 60, y: 30, scale: 0.1, alpha: 0, duration: 380, ease: 'Cubic.easeIn', onComplete: () => { box.destroy(); if (res.total > 0) { this.bumpScore(400); this.fx.stars(60, 40, 8, 160, 0.8); window.audioEngine.playStreakHit(8); } } });
+      this.tweens.add({ targets: box, x: 60, y: 30, scale: 0.1, alpha: 0, duration: 380, ease: 'Cubic.easeIn', onComplete: () => {
+        box.destroy();
+        this.bankScore(shownFrom);
+        if (res.total > 0) { this.fx.stars(60, 40, 8, 160, 0.8); window.audioEngine.playStreakHit(8); }
+      } });
     };
     if (this.reduce) this.time.delayedCall(1700, () => box.destroy()); else this.time.delayedCall(1800, bank);
   }
@@ -3076,7 +3125,7 @@ class GameScene extends Phaser.Scene {
   /** Mini cheering heads rain from the top: the payoff for fever and big moments. Skipped under reduced motion. */
   confettiBurst(n = 30) {
     if (this.reduce) return;
-    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, -4);
+    this.fx.headRain(n, 20, VIEW.width - 20, BOARD_Y - 20, VIEW.height, -4);
   }
 
   /**
@@ -3167,7 +3216,7 @@ class GameScene extends Phaser.Scene {
     // A sticker: ink outline, the accent inside on streaks, the ink otherwise.
     y = Math.max(y, GRID_OFFSET_Y + 40);
     const popup = this.add.text(x, y, text,
-      textStyle('popup', { fontSize: `${size}px`, color: level ? P.hot : P.ink, stroke: P.bg, strokeThickness: 5 })).setOrigin(0.5).setDepth(20).setScale(0.4);
+      textStyle('popup', { fontSize: `${size}px`, color: P.ink, stroke: level && P.inkIsLight === false ? '#ffffff' : P.bg, strokeThickness: 7 })).setOrigin(0.5).setDepth(20).setScale(0.4);
     this.tweens.add({ targets: popup, scale: 1.15, duration: 140, ease: 'Back.easeOut' });
     this.tweens.add({
       targets: popup, y: y - 56, alpha: 0,
@@ -3192,6 +3241,7 @@ class GameScene extends Phaser.Scene {
     const cy = GRID_OFFSET_Y + 70;
     const t = this.add.text(width / 2, cy, label + '!',
       textStyle('heading', { fontSize: `${46 + tier * 6}px`, color: P.hot, stroke: P.ink, strokeThickness: 9 })).setOrigin(0.5).setDepth(56).setScale(0.4).setAngle(-6);
+    this._tierBanner = t;
     const fit = Math.min(1, 380 / (t.width * 1.2)); // a long word like LEGENDARY must never run off the screen
     this.tweens.add({ targets: t, scale: 1.2 * fit, angle: -3, duration: 220, ease: 'Back.easeOut' });
     this.tweens.add({ targets: t, scale: fit, duration: 200, delay: 220 });
@@ -3220,16 +3270,17 @@ class GameScene extends Phaser.Scene {
   showChainBanner(depth) {
     const { width } = VIEW;
     const cx = width / 2;
-    const cy = GRID_OFFSET_Y + 215;
+    const cy = GRID_OFFSET_Y + 200;
     const label = `CHAIN ×${depth}`;
     const fontSize = Math.min(32 + depth * 6, 60);
     const mega = depth >= 4;
     const fill = mega ? P.inkN : P.hotN;
     const textCol = mega ? P.hot : P.ink;
 
+    this.clearBanners();
     const burst = this.add.graphics().setDepth(28);
     burst.fillStyle(fill, 0.97);
-    const spikes = 12 + depth * 2, rIn = 50 + depth * 7, rOut = 88 + depth * 22;
+    const spikes = 12 + depth * 2, rIn = 46 + depth * 5, rOut = Math.min(150, 84 + depth * 14);
     burst.beginPath();
     for (let i = 0; i < spikes * 2; i++) {
       const a = (i / (spikes * 2)) * Math.PI * 2;
@@ -3247,6 +3298,7 @@ class GameScene extends Phaser.Scene {
       textStyle('badge', { fontSize: '14px', color: textCol, stroke: mega ? P.ink : P.bg, strokeThickness: 4 })
     ).setOrigin(0.5).setAlpha(0).setDepth(30);
 
+    this._banners = [main, burst, bonus];
     this.tweens.add({ targets: [main, burst], scale: 1, duration: 320, ease: 'Back.easeOut' });
     if (!this.reduce) this.tweens.add({ targets: burst, angle: 24, duration: 1100, ease: 'Sine.easeOut' });
     this.tweens.add({ targets: bonus, alpha: 1, y: cy + fontSize * 0.68, duration: 250, delay: 150, ease: 'Quad.easeOut' });
@@ -3260,6 +3312,13 @@ class GameScene extends Phaser.Scene {
       duration: 500, delay: 900, ease: 'Quad.easeIn',
       onComplete: () => { main.destroy(); burst.destroy(); bonus.destroy(); },
     });
+  }
+
+  /** Remove any chain or tier banner still on screen (a fever starting must not print over one). */
+  clearBanners() {
+    (this._banners || []).forEach((o) => { if (o && o.active) { this.tweens.killTweensOf(o); o.destroy(); } });
+    this._banners = [];
+    if (this._tierBanner && this._tierBanner.active) { this.tweens.killTweensOf(this._tierBanner); this._tierBanner.destroy(); }
   }
 
   /** From chain 3 on, a ring of ink sweeps across the whole board and every head leans away from the middle. */
@@ -3331,7 +3390,7 @@ class GameScene extends Phaser.Scene {
     }
     const tier = STREAK_LEVELS.indexOf(level) + 1;
     this.tierText.setText(`${level.label}!`);
-    this.tierText.setColor(this.feverActive ? P.ink : P.hot);
+    this.tierText.setColor(this.feverActive ? this.hudInk : P.hot);
     this.tierText.setScale(0.5);
     this.tweens.add({ targets: this.tierText, scale: 1, duration: 260, ease: 'Back.easeOut' });
 
@@ -3362,7 +3421,7 @@ class GameScene extends Phaser.Scene {
   updateStreakUI() {
     if (this.streak > 1) {
       this.streakCounter.setText(`STREAK ${this.streak}×`);
-      this.streakCounter.setColor(this.streak >= 5 && !this.feverActive ? P.hot : P.ink);
+      this.streakCounter.setColor(this.feverActive ? this.hudInk : this.streak >= 5 ? P.hot : P.ink);
       this.streakCounter.setX(this.feverActive ? 104 : 82);
     } else {
       this.streakCounter.setText('');
