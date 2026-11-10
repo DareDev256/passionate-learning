@@ -352,8 +352,7 @@ class PopFx {
   headRain(n, x0, x1, y0, y1, depth) {
     for (let i = 0; i < n; i++) {
       const crew = (Math.random() * CREW.length) | 0;
-      this.spawn({ tex: 'heads', frame: `${crew}_${Math.random() < 0.5 ? 'cheer0' : 'cheer1'}`, headOrigin: true, x: x0 + Math.random() * (x1 - x0), y: y0 - Math.random() * 60, vx: (Math.random() - 0.5) * 80, vy: 40 + Math.random() * 120, g: 260, rot: Math.random() * 40 - 20, vr: (Math.random() - 0.5) * 260, s0: 0.55 + Math.random() * 0.35, s1: 0.55, dur: 1500 + Math.random() * 900, depth: depth || 52, fadeAt: 0.7, a1: 0, });
-      this.live[this.live.length - 1] && (this.live[this.live.length - 1].yMax = y1);
+      this.spawn({ tex: 'heads', frame: `${crew}_${Math.random() < 0.5 ? 'cheer0' : 'cheer1'}`, headOrigin: true, x: x0 + Math.random() * (x1 - x0), y: y0 - Math.random() * 220, vx: (Math.random() - 0.5) * 80, vy: 40 + Math.random() * 120, g: 260, rot: Math.random() * 40 - 20, vr: (Math.random() - 0.5) * 260, s0: 0.55 + Math.random() * 0.35, s1: 0.55, dur: 1500 + Math.random() * 900, depth: depth || 52, fadeAt: 0.7, a1: 0, });
     }
   }
 

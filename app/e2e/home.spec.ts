@@ -69,7 +69,7 @@ test("three quests and a chest: a round ticks two, a second round opens the ches
     return (a + 0.05) / (b + 0.05);
   });
   expect(ratio).toBeGreaterThanOrEqual(4.5);
-  if (page.viewportSize()?.width === 390) {
+  if (process.env.SHOTS === "1" && page.viewportSize()?.width === 390) {
     await page.waitForTimeout(500); // let the System window finish its open animation
     await page.screenshot({ path: "docs/screenshots/2026-11-09_p2/08-home-chest-ready-390.png", fullPage: true });
   }

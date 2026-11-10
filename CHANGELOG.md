@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0 (2026-11-10): What's Poppin, the crew is the board
+
+- Every bubble is now a hand-drawn stick head: Hero, Pro, Bolt, Spark, Miso and Dash. Each has its own accessory (headband, glasses, spiky hair, antenna, bun, cap) and its own face, so you can tell them apart by shape as well as colour. The old stage above the board is gone; the board gets the room.
+- The heads are alive. They blink, glance around, look at your finger, and when you wait a moment the heads beside a possible match lean toward it.
+- Pops are drawn: the face squeezes, the head squashes and stretches, then an ink splat bursts out in the crew colour with drops and stars. Bigger matches and chains hit harder, with a short freeze on impact. Heads fall with a stretch and land with a squash and a small bounce.
+- The crew shouts short lines on combos and chains, and a tally strip under the board counts pops per crew member.
+- Fever takes over the screen: the ground changes colour, the heads dance on the beat, the board kicks with the drums, the multiplier gets big, and it ends with a payoff plate that counts up what the fever earned.
+- The game over score counts up with weight, and a tap skips to the total.
+- Reduce Motion keeps every moment readable without the movement.
+
 ## 1.5.0 (2026-11-09): themes and the What's Poppin glow-up
 
 - "Cap or facts?" is now "True or false?". The buttons read TRUE and FALSE, answers are labelled TRUE or FALSE, and the world is called Fact Check. Your saves are untouched.

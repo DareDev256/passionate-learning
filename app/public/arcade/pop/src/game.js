@@ -731,7 +731,7 @@ class GameOverScene extends Phaser.Scene {
       this.tweens.add({ targets: scoreText, scale: 1.4, duration: 110, ease: 'Quad.easeOut', yoyo: true });
       this.cameras.main.shake(150, 0.006);
       sfx.stars(width / 2, cardY + 62, 14, 230, 1.3);
-      if (this.good) sfx.headRain(isNewHigh ? 34 : 18, 20, width - 20, -20, height, 60);
+      if (this.good) sfx.headRain(isNewHigh ? 34 : 18, 20, width - 20, -20, height, -2);
       this.lineup.forEach((m, i) => this.tweens.add({ targets: m, hop: 28, duration: 150, delay: i * 40, yoyo: true, ease: 'Quad.easeOut' }));
       window.audioEngine.playStreakHit(this.good ? 12 : 3);
     };
@@ -1425,7 +1425,7 @@ class GameScene extends Phaser.Scene {
     this.reduce = REDUCE_MOTION;
 
     // ---- HUD ROW: score left, clock centre, buttons right ----
-    this.add.text(18, 9, 'SCORE', textStyle('label', { fontSize: '10px', color: P.muted, letterSpacing: 3 })).setOrigin(0, 0);
+    this.scoreLabel = this.add.text(18, 9, 'SCORE', textStyle('label', { fontSize: '10px', color: P.muted, letterSpacing: 3 })).setOrigin(0, 0);
     this.scoreText = this.add.text(18, 20, '0', textStyle('accent', { fontSize: '32px', strokeThickness: 0, color: P.ink })).setOrigin(0, 0);
 
     const timed = this.gameMode === 'timed' || this.gameMode === 'daily';
@@ -1912,7 +1912,9 @@ class GameScene extends Phaser.Scene {
     g.lineStyle(3, P.inkN, 1); g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
     g.fillStyle(0xffffff, 1); g.fillTriangle(-6 + (x - cx) * 0.3, h / 2 - 1, 8 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11);
     g.lineStyle(3, P.inkN, 1); g.lineBetween(-6 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11); g.lineBetween(8 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11);
+    if (this._shoutBox && this._shoutBox.active) { const old = this._shoutBox; this.tweens.add({ targets: old, alpha: 0, duration: 120, onComplete: () => old.destroy() }); }
     const box = this.add.container(cx, cy, [g, t]).setDepth(40).setScale(0.3).setAngle(this.reduce ? 0 : Phaser.Math.Between(-6, 6));
+    this._shoutBox = box;
     this.tweens.add({ targets: box, scale: 1, duration: 180, ease: 'Back.easeOut' });
     this.tweens.add({ targets: box, alpha: 0, y: cy - 22, duration: 300, delay: 820, ease: 'Quad.easeIn', onComplete: () => box.destroy() });
   }
@@ -2804,7 +2806,7 @@ class GameScene extends Phaser.Scene {
 
     // ---- CASCADE CHAIN BANNER ----
     if (depth >= 2) this.showChainBanner(depth);
-    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(6 + depth * 3, 24), 20, VIEW.width - 20, BOARD_Y - 20, VIEW.height, 52); }
+    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(5 + depth * 2, 16), 20, VIEW.width - 20, -30, VIEW.height, 52); }
 
     // ---- LIVE MILESTONES ----
     this.checkMilestones();
@@ -2914,6 +2916,7 @@ class GameScene extends Phaser.Scene {
     this.feverCount++;
     this.feverClock = 0; this.lastBeat = -1;
     this.feverTally.start();
+    this.setHudInk(true);
 
     const { width } = VIEW;
     const cy = this.boardMid.y - 30;
@@ -2951,6 +2954,12 @@ class GameScene extends Phaser.Scene {
     this.updateMultiplierBadge();
   }
 
+  /** On the fever ground the small grey labels lose contrast, so they switch to the full ink colour. */
+  setHudInk(on) {
+    const c = on ? P.ink : P.muted;
+    [this.scoreLabel, this.timerSub, this.tipText, this.modeText, this.bestStreakText].forEach((t) => { if (t && t.active) t.setColor(c); });
+  }
+
   /** Once per beat of the fever groove: the board kicks, a drum plays, the crew throws a few stars, now and then shouts. */
   onFeverBeat(bp) {
     if (!this.reduce) this.pulse = 1;
@@ -2965,7 +2974,7 @@ class GameScene extends Phaser.Scene {
       const b = this.grid[Phaser.Math.Between(0, GRID_ROWS - 1)]?.[Phaser.Math.Between(0, GRID_COLS - 1)];
       if (b && b.active) this.shout(crewLine(b.getData('colorIdx'), 2), b.x, b.y - 34, true);
     }
-    if (!this.reduce) this.tweens.add({ targets: this.multBadge, scale: (this.multBase || 1.4) * 1.14, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
+    if (!this.reduce) this.tweens.add({ targets: this.multBadge, scale: (this.multBase || 1.22) * 1.14, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
     if (this.bigMult && this.bigMult.active && !this.reduce) { this.bigMult.setScale(1.06); this.tweens.add({ targets: this.bigMult, scale: 1, duration: 200, ease: 'Quad.easeOut' }); }
   }
 
@@ -3010,6 +3019,7 @@ class GameScene extends Phaser.Scene {
     this.feverTimer = 0;
     this.feverMeter = 0;
     const res = this.feverTally.end();
+    this.setHudInk(false);
     this.updateMultiplierBadge();
 
     // The payoff: a plate lands on the board with what the fever earned, counting up, while the crew cheers once more.
@@ -3338,7 +3348,8 @@ class GameScene extends Phaser.Scene {
     this.multText.setFontSize(mult >= 10 ? '28px' : '32px');
     this.multLabel.setColor(onFill);
 
-    this.multBase = fever ? 1.4 : 1;
+    this.multBase = fever ? 1.22 : 1;
+    this.multBadge.setPosition(fever ? 56 : 44, BAND_Y + (fever ? 36 : 33));
     if (mult !== this._lastMult) {
       this._lastMult = mult;
       if (!this.reduce) { this.multBadge.setScale(this.multBase * 1.4); this.tweens.add({ targets: this.multBadge, scale: this.multBase, duration: 260, ease: 'Back.easeOut' }); }
