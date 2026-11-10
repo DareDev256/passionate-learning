@@ -6,16 +6,21 @@
 // =============================================================
 const GRID_COLS = 8;
 const GRID_ROWS = 10;
-const BUBBLE_SIZE = 44;
-const BUBBLE_PAD = 4;
-const GRID_OFFSET_X = 40;
+// The crew IS the board: one head per cell, 52 wide on a 54 pitch, so a head and its neighbours almost touch.
+const BUBBLE_SIZE = 52;
+const BUBBLE_PAD = 2;
+const CELL = BUBBLE_SIZE + BUBBLE_PAD;
+const GRID_OFFSET_X = 16;
 // Layout, top to bottom (logical units; the view is LW x LH):
-// HUD row 0-60, timer bar 62-68, stage 72-282 (the cast lives here), board 296-776, footer 776-868.
+// HUD row 0-60, timer bar 62-68, combo band 74-140 (multiplier, HOT meter, streak), board 148-710,
+// crew tally strip 720-800, tip line at the bottom. There is no stage: the heads on the board are the cast.
 const HUD_H = 60;
 const TIMER_Y = 62;
-const STAGE_Y = 72;
-const STAGE_H = 210;
-const GRID_OFFSET_Y = 296;
+const BAND_Y = 74;
+const BAND_H = 66;
+const BOARD_Y = 148;
+const GRID_OFFSET_Y = BOARD_Y + 14;
+const FEVER_BPM = 126;
 const MIN_MATCH = 3;
 const GAME_TIME = 90; // seconds
 
@@ -53,55 +58,6 @@ function crispTexture(scene, key, w, h, drawFn) {
 const COLORS = P.bubblesN;
 
 const COLOR_NAMES = ['one', 'two', 'three', 'four', 'five', 'six'];
-
-/**
- * Colorblind symbol drawers — each renders a unique geometric shape
- * on top of the bubble to distinguish colors without relying on hue.
- * Shapes: diamond, cross, ring, triangle, square, star.
- * @type {Array<(g: Phaser.GameObjects.Graphics, cx: number, cy: number, s: number) => void>}
- */
-const CB_SYMBOLS = [
-  (g, cx, cy, s) => { // purple — diamond
-    g.fillStyle(0xffffff, 0.9);
-    g.beginPath(); g.moveTo(cx, cy - s); g.lineTo(cx + s * 0.7, cy);
-    g.lineTo(cx, cy + s); g.lineTo(cx - s * 0.7, cy); g.closePath(); g.fillPath();
-  },
-  (g, cx, cy, s) => { // red — cross
-    g.lineStyle(3.5, 0xffffff, 0.9);
-    g.lineBetween(cx - s, cy - s, cx + s, cy + s);
-    g.lineBetween(cx + s, cy - s, cx - s, cy + s);
-  },
-  (g, cx, cy, s) => { // green — ring
-    g.lineStyle(3, 0xffffff, 0.9);
-    g.strokeCircle(cx, cy, s * 0.85);
-  },
-  (g, cx, cy, s) => { // gold — triangle
-    g.fillStyle(0xffffff, 0.9);
-    g.beginPath(); g.moveTo(cx, cy - s);
-    g.lineTo(cx + s, cy + s * 0.7); g.lineTo(cx - s, cy + s * 0.7);
-    g.closePath(); g.fillPath();
-  },
-  (g, cx, cy, s) => { // blue — square
-    g.fillStyle(0xffffff, 0.9);
-    g.fillRect(cx - s * 0.7, cy - s * 0.7, s * 1.4, s * 1.4);
-  },
-  (g, cx, cy, s) => { // orange — 6-point star
-    g.fillStyle(0xffffff, 0.9);
-    g.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const a = -Math.PI / 2 + i * Math.PI / 3;
-      const r = i % 2 === 0 ? s : s * 0.45;
-      g[i === 0 ? 'moveTo' : 'lineTo'](cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-    }
-    g.closePath(); g.fillPath();
-  },
-];
-
-/** Return the correct bubble texture key based on colorblind mode setting. */
-function bubbleKey(colorIdx) {
-  return SafeStorage.get(SK.COLORBLIND, '0') === '1'
-    ? `bubble_cb_${colorIdx}` : `bubble_${colorIdx}`;
-}
 
 const STREAK_LEVELS = [
   { min: 3,  label: 'NICE',      color: P.ink, size: 28 },
@@ -589,38 +545,9 @@ class BootScene extends Phaser.Scene {
   constructor() { super({ key: 'BootScene' }); }
 
   create() {
-    const S = BUBBLE_SIZE;
-    const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
-    // A doodle bubble: flat colour, ink outline, a hard under-shadow on light themes, a white glint.
-    const drawBubble = (ctx, hex, symbol) => {
-      const cx = S / 2, cy = S / 2 - 1.2, r = S / 2 - 3.2;
-      if (!P.inkIsLight) { ctx.fillStyle = P.ink; ctx.beginPath(); ctx.arc(cx, cy + 2.6, r + 1, 0, Math.PI * 2); ctx.fill(); }
-      else { ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(cx, cy + 2.2, r + 1, 0, Math.PI * 2); ctx.fill(); }
-      ctx.fillStyle = hex; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-      // Under-curve shade
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
-      ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.arc(cx + 3, cy + 5, r, 0, Math.PI * 2); ctx.arc(cx, cy, r, 0, Math.PI * 2, true); ctx.fill('evenodd');
-      ctx.restore();
-      ctx.lineWidth = 2.6; ctx.strokeStyle = P.ink; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-      // Glint
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.arc(cx, cy, r - 5, Math.PI * 1.08, Math.PI * 1.42); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(cx - r * 0.5, cy - r * 0.18, 1.5, 0, Math.PI * 2); ctx.fill();
-      if (symbol) symbol(ctx, cx, cy + 1, 7, lum(hex) > 0.55 ? '#0a0a0a' : '#ffffff');
-    };
-    // Colourblind symbols: one distinct shape per colour, drawn on top.
-    const SYMBOLS = [
-      (c, x, y, s, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(x, y - s); c.lineTo(x + s * 0.7, y); c.lineTo(x, y + s); c.lineTo(x - s * 0.7, y); c.closePath(); c.fill(); },
-      (c, x, y, s, col) => { c.strokeStyle = col; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - s, y - s); c.lineTo(x + s, y + s); c.moveTo(x + s, y - s); c.lineTo(x - s, y + s); c.stroke(); },
-      (c, x, y, s, col) => { c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); c.arc(x, y, s * 0.85, 0, Math.PI * 2); c.stroke(); },
-      (c, x, y, s, col) => { c.fillStyle = col; c.beginPath(); c.moveTo(x, y - s); c.lineTo(x + s, y + s * 0.7); c.lineTo(x - s, y + s * 0.7); c.closePath(); c.fill(); },
-      (c, x, y, s, col) => { c.fillStyle = col; c.fillRect(x - s * 0.7, y - s * 0.7, s * 1.4, s * 1.4); },
-      (c, x, y, s, col) => { c.fillStyle = col; c.beginPath(); for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * Math.PI / 3; const rr = i % 2 === 0 ? s : s * 0.45; c[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c.closePath(); c.fill(); },
-    ];
-    P.bubbles.forEach((hex, i) => {
-      crispTexture(this, `bubble_${i}`, S, S, (ctx) => drawBubble(ctx, hex, null));
-      crispTexture(this, `bubble_cb_${i}`, S, S, (ctx) => drawBubble(ctx, hex, SYMBOLS[i]));
-    });
+    // The crew heads and the pop frames are drawn once, here, into two atlases for this theme.
+    buildHeadAtlas(this, SafeStorage.get(SK.COLORBLIND, '0') === '1');
+    buildPopAtlas(this);
     crispTexture(this, 'particle', 8, 8, (c) => { c.fillStyle = '#fff'; c.beginPath(); c.arc(4, 4, 3.6, 0, Math.PI * 2); c.fill(); });
     crispTexture(this, 'star', 14, 14, (c) => {
       c.fillStyle = '#fff'; c.beginPath();
@@ -646,37 +573,43 @@ class TitleScene extends Phaser.Scene {
     this.reduce = REDUCE_MOTION;
     drawDarkGridBg(this);
 
-    // Drifting bubbles behind everything.
+    // Drifting crew heads behind everything.
+    this.drifters = [];
     for (let i = 0; i < 12; i++) {
       const bx = Phaser.Math.Between(20, width - 20);
       const by = Phaser.Math.Between(40, height - 40);
-      const bubble = this.add.image(bx, by, bubbleKey(Phaser.Math.Between(0, COLORS.length - 1)));
-      bubble.setAlpha(0.22).setScale(Phaser.Math.FloatBetween(0.5, 1.0) * BS).setDepth(-3);
-      if (!this.reduce) this.tweens.add({ targets: bubble, y: by + Phaser.Math.Between(-24, 24), x: bx + Phaser.Math.Between(-16, 16), duration: Phaser.Math.Between(3000, 6000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      const h = addHead(this, bx, by, i % CREW.length, 'idle0');
+      h.setAlpha(0.2).setScale(Phaser.Math.FloatBetween(0.5, 0.9) * BS).setDepth(-3);
+      if (!this.reduce) this.tweens.add({ targets: h, y: by + Phaser.Math.Between(-24, 24), x: bx + Phaser.Math.Between(-16, 16), duration: Phaser.Math.Between(3000, 6000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
     // Logo: a sticker, like the app's.
     this.add.text(width / 2, 52, "WHAT'S", textStyle('heading', { fontSize: '34px', color: P.ink, stroke: P.bg, strokeThickness: 0 })).setOrigin(0.5);
     const pop = this.add.text(width / 2, 104, 'POPPIN', textStyle('heading', { fontSize: '68px', color: P.hot, stroke: P.ink, strokeThickness: 8 })).setOrigin(0.5);
     if (!this.reduce) this.tweens.add({ targets: pop, scale: 1.04, angle: -1.5, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    this.add.text(width / 2, 154, 'match bubbles  /  build streaks  /  meet the crew', textStyle('label', { fontSize: '11px', letterSpacing: 1, color: P.muted })).setOrigin(0.5);
+    this.add.text(width / 2, 154, 'match the crew  /  build streaks  /  hit fever', textStyle('label', { fontSize: '11px', letterSpacing: 1, color: P.muted })).setOrigin(0.5);
 
-    // The cast waits on a little stage.
+    // The crew waits on a little stage: six heads, each with its own name and habits.
     const sx = 10, sy = 172, sw = width - 20, sh = 190;
     const stage = this.add.graphics();
     stage.fillStyle(P.inkN, 1); stage.fillRoundedRect(sx, sy + 4, sw, sh, 14);
     stage.fillStyle(P.panelN, 1); stage.fillRoundedRect(sx, sy, sw, sh, 14);
     stage.lineStyle(3, P.inkN, 1); stage.strokeRoundedRect(sx, sy, sw, sh, 14);
-    const gy = sy + sh - 26;
+    const gy = sy + sh - 44;
     stage.fillStyle(P.inkN, 0.55);
     for (let x = sx + 14; x < sx + sw - 10; x += 9) stage.fillRect(x, gy + 1, 3, 2);
-    this.cast = new Cast(this, sx, sy, sw, sh);
-    this.cast.hero.setPose('wave', 200); this.cast.hero.setFace('grin');
-    this.cast.pro.setPose('present', 200); this.cast.pro.setFace('smug');
-    this.cast.bolt.setPose('cheer', 200); this.cast.bolt.setFace('grin');
-    this.cast.spark.setPose('hips', 200);
-    this.cast.revert = 0;
-    this.time.addEvent({ delay: 2600, loop: true, callback: () => { const m = Phaser.Math.RND.pick(this.cast.members); m.hop(1); } });
+    this.lineup = CREW.map((m, i) => {
+      const x = sx + 37 + i * ((sw - 74) / 5), baseY = gy - 36;
+      const shadow = this.add.ellipse(x, gy - 3, 40, 8, P.inkN, 0.35);
+      const img = addHead(this, x, baseY, i, 'idle0').setScale(1.3 * BS);
+      this.add.text(x, gy + 12, m.name.toUpperCase(), textStyle('label', { fontSize: '10px', color: P.muted, letterSpacing: 1 })).setOrigin(0.5, 0);
+      return { crew: i, img, shadow, x, baseY, life: newLife(i + 1), mood: 'idle', moodEnd: 0, hop: 0 };
+    });
+    this.time.addEvent({ delay: 1800, loop: true, callback: () => {
+      const m = Phaser.Math.RND.pick(this.lineup);
+      m.mood = 'cheer0'; m.moodEnd = this.time.now + 800;
+      if (!this.reduce) this.tweens.add({ targets: m, hop: 22, duration: 170, yoyo: true, ease: 'Quad.easeOut' });
+    } });
 
     // Buttons: three modes, then two small ones.
     const bw = width - 60, bh = 54, x = width / 2;
@@ -716,7 +649,17 @@ class TitleScene extends Phaser.Scene {
     });
   }
 
-  update(time, delta) { if (this.cast) this.cast.update(time, delta); }
+  update(time) {
+    const ptr = this.input.activePointer;
+    (this.lineup || []).forEach((m) => {
+      if (m.mood !== 'idle' && time > m.moodEnd) m.mood = 'idle';
+      const px = ptr && ptr.x ? ptr.x / Z : null;
+      const look = px !== null && Math.abs(px - m.x) > 30 ? Math.sign(px - m.x) : 0;
+      m.img.setFrame(`${m.crew}_${lifeFrame(m.life, time, m.mood, look, this.reduce)}`);
+      m.img.y = m.baseY - m.hop;
+      m.shadow.setScale(1 - m.hop / 70, 1 - m.hop / 70);
+    });
+  }
 }
 
 // =============================================================
@@ -748,18 +691,24 @@ class GameOverScene extends Phaser.Scene {
       textStyle('heading', { fontSize: '44px', color: P.hot, stroke: P.ink, strokeThickness: 7 })).setOrigin(0.5).setScale(0);
     this.tweens.add({ targets: goText, scale: 1, duration: 450, ease: 'Back.easeOut' });
 
-    // Cast on the stage, reacting to the result.
+    // The crew on the stage, reacting to the result: cheering if it went well, worried and then waving if not.
     const sx = 10, sy = 84, sw = width - 20, sh = 190;
     const stage = this.add.graphics();
     stage.fillStyle(P.inkN, 1); stage.fillRoundedRect(sx, sy + 4, sw, sh, 14);
     stage.fillStyle(P.panelN, 1); stage.fillRoundedRect(sx, sy, sw, sh, 14);
     stage.lineStyle(3, P.inkN, 1); stage.strokeRoundedRect(sx, sy, sw, sh, 14);
-    const gy = sy + sh - 26;
+    const gy = sy + sh - 30;
     stage.fillStyle(P.inkN, 0.55);
     for (let x = sx + 14; x < sx + sw - 10; x += 9) stage.fillRect(x, gy + 1, 3, 2);
-    this.cast = new Cast(this, sx, sy, sw, sh);
-    this.cast.finish(good);
-    if (good) this.time.addEvent({ delay: 900, loop: true, callback: () => this.cast.members.forEach((m, i) => this.time.delayedCall(i * 90, () => m.hop(1.2))) });
+    this.good = good;
+    this.fx = new PopFx(this);
+    this.lineup = CREW.map((m, i) => {
+      const x = sx + 37 + i * ((sw - 74) / 5), baseY = gy - 40;
+      const shadow = this.add.ellipse(x, gy - 3, 40, 8, P.inkN, 0.35);
+      const img = addHead(this, x, baseY, i, 'idle0').setScale(1.3 * BS);
+      return { crew: i, img, shadow, x, baseY, life: newLife(i + 5), mood: good ? 'cheer0' : 'worry', moodEnd: good ? 1e9 : 1400, hop: 0 };
+    });
+    if (good) this.time.addEvent({ delay: 520, loop: true, callback: () => this.lineup.forEach((m, i) => this.time.delayedCall(i * 70, () => { m.mood = m.mood === 'cheer0' ? 'cheer1' : 'cheer0'; if (!this.reduce) this.tweens.add({ targets: m, hop: 26, duration: 160, yoyo: true, ease: 'Quad.easeOut' }); })) });
 
     // Score card
     const cardY = 296, cardH = 188;
@@ -770,14 +719,44 @@ class GameOverScene extends Phaser.Scene {
 
     this.add.text(width / 2, cardY + 22, 'FINAL SCORE', textStyle('label', { fontSize: '11px', letterSpacing: 3, color: P.muted })).setOrigin(0.5);
     const scoreText = this.add.text(width / 2, cardY + 62, '0', textStyle('popup', { fontSize: '52px', color: P.ink, strokeThickness: 0 })).setOrigin(0.5);
-    this.tweens.addCounter({
-      from: 0, to: score, duration: this.reduce ? 1 : 1400, delay: 400, ease: 'Quad.easeOut',
-      onUpdate: (tw) => scoreText.setText(Math.floor(tw.getValue()).toLocaleString()),
-      onComplete: () => { scoreText.setText(score.toLocaleString()); if (!this.reduce) this.tweens.add({ targets: scoreText, scale: 1.18, duration: 120, yoyo: true }); },
+    // The count-up has weight: it ticks and thumps in chunks, slows as it nears the total, then slams.
+    const sfx = this.fx;
+    const finish = () => {
+      if (this.countDone) return;
+      this.countDone = true;
+      scoreText.setText(score.toLocaleString());
+      if (this.reduce) return;
+      this.tweens.killTweensOf(scoreText);
+      scoreText.setScale(1);
+      this.tweens.add({ targets: scoreText, scale: 1.4, duration: 110, ease: 'Quad.easeOut', yoyo: true });
+      this.cameras.main.shake(150, 0.006);
+      sfx.stars(width / 2, cardY + 62, 14, 230, 1.3);
+      if (this.good) sfx.headRain(isNewHigh ? 34 : 18, 20, width - 20, -20, height, 60);
+      this.lineup.forEach((m, i) => this.tweens.add({ targets: m, hop: 28, duration: 150, delay: i * 40, yoyo: true, ease: 'Quad.easeOut' }));
+      window.audioEngine.playStreakHit(this.good ? 12 : 3);
+    };
+    let lastChunk = -1;
+    const countMs = this.reduce || score < 1 ? 1 : Math.min(2300, 900 + Math.log10(score + 10) * 380);
+    const counter = this.tweens.addCounter({
+      from: 0, to: score, duration: countMs, delay: 400, ease: 'Cubic.easeOut',
+      onUpdate: (tw) => {
+        const v = Math.floor(tw.getValue());
+        scoreText.setText(v.toLocaleString());
+        const chunk = Math.floor(v / Math.max(1, score / 22));
+        if (chunk !== lastChunk && !this.reduce) {
+          lastChunk = chunk;
+          scoreText.setScale(1.1);
+          this.tweens.add({ targets: scoreText, scale: 1, duration: 90, ease: 'Quad.easeOut' });
+          window.audioEngine.playSelect();
+        }
+      },
+      onComplete: finish,
     });
+    // A tap skips to the total.
+    this.input.once('pointerdown', () => { counter.stop(); finish(); });
     if (isNewHigh) {
       const badge = this.add.text(width / 2, cardY + 98, 'NEW HIGH SCORE', textStyle('badge', { fontSize: '16px', color: P.hot, stroke: '', strokeThickness: 0, letterSpacing: 2 })).setOrigin(0.5).setAlpha(0);
-      this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 1700 });
+      this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: this.reduce ? 0 : 400 + countMs + 150 });
       if (!this.reduce) this.tweens.add({ targets: badge, scale: 1.06, duration: 700, yoyo: true, repeat: -1, delay: 2000 });
     }
 
@@ -793,6 +772,7 @@ class GameOverScene extends Phaser.Scene {
     // Grade stamp, slammed on after the score lands.
     const gradeY = cardY + cardH + 52;
     const stamp = this.add.container(width / 2, gradeY).setScale(this.reduce ? 0 : 2.6).setAngle(-14).setAlpha(0);
+    if (this.reduce) stamp.setScale(1).setAlpha(1).setAngle(-4);
     const ring = this.add.graphics();
     ring.fillStyle(P.inkN, 1); ring.fillCircle(0, 4, 42);
     ring.fillStyle(gradeInfo.grade === 'S' || gradeInfo.grade === 'A' ? P.hotN : P.cardN, 1); ring.fillCircle(0, 0, 42);
@@ -802,7 +782,7 @@ class GameOverScene extends Phaser.Scene {
     const light = (0.2126 * ((fn >> 16) & 255) + 0.7152 * ((fn >> 8) & 255) + 0.0722 * (fn & 255)) / 255 > 0.55;
     const letter = this.add.text(0, -2, gradeInfo.grade, textStyle('heading', { fontSize: '52px', color: light ? '#0a0a0a' : '#ffffff', strokeThickness: 0 })).setOrigin(0.5);
     stamp.add([ring, letter]);
-    this.tweens.add({ targets: stamp, scale: 1, alpha: 1, angle: -4, duration: 300, delay: this.reduce ? 0 : 1700, ease: 'Back.easeOut',
+    this.tweens.add({ targets: stamp, scale: 1, alpha: 1, angle: -4, duration: 300, delay: this.reduce ? 0 : 400 + countMs + 200, ease: 'Back.easeOut',
       onStart: () => { if (!this.reduce) this.cameras.main.shake(120, 0.004); } });
     this.add.text(width / 2, gradeY + 54, `${gradeInfo.label}  ·  ${mode.toUpperCase()}`, textStyle('badge', { fontSize: '13px', color: P.ink, stroke: '', strokeThickness: 0, letterSpacing: 3 })).setOrigin(0.5, 0.5);
 
@@ -825,16 +805,19 @@ class GameOverScene extends Phaser.Scene {
     createButton(this, { x: width / 2 + (btnW / 2 - 4) / 2 + 4, y: y1 + 62, width: btnW / 2 - 4, height: 44, text: 'MENU',
       iconFn: (s, bx, by) => Icons.back(s, bx, by, 14, P.inkN), callback: () => this.scene.start('TitleScene') });
 
-    if (isNewHigh && !this.reduce) {
-      this.time.addEvent({ delay: 90, repeat: 34, callback: () => {
-        const p = this.add.image(Phaser.Math.Between(0, width), -10, 'conf').setScale(Phaser.Math.FloatBetween(0.8, 1.6) * BS).setDepth(-2);
-        p.setTint(Phaser.Math.RND.pick([...P.bubblesN, P.hotN]));
-        this.tweens.add({ targets: p, y: height + 20, x: p.x + Phaser.Math.Between(-60, 60), rotation: Phaser.Math.FloatBetween(-6, 6), duration: Phaser.Math.Between(1500, 2800), onComplete: () => p.destroy() });
-      } });
-    }
   }
 
-  update(time, delta) { if (this.cast) this.cast.update(time, delta); }
+  update(time, delta) {
+    if (this.fx) this.fx.update(delta);
+    (this.lineup || []).forEach((m) => {
+      if (m.mood === 'worry' && time > m.moodEnd) m.mood = 'idle';
+      const frame = lifeFrame(m.life, time, m.mood, 0, this.reduce);
+      m.img.setFrame(`${m.crew}_${frame}`);
+      m.img.y = m.baseY - m.hop;
+      const sc = 1 - m.hop / 80;
+      m.shadow.setScale(sc, sc);
+    });
+  }
 
   shareScore(score, bestStreak, moves, mode, feverCount, bestChain) {
     // Use distinct names to avoid shadowing the module-level safeScore() function
@@ -1378,6 +1361,7 @@ class GameScene extends Phaser.Scene {
     const rawMode = data?.mode || 'timed';
     this.gameMode = GameScene.VALID_MODES.has(rawMode) ? rawMode : 'timed';
     this.grid = [];
+    this.stopMs = 0;
     this.score = 0;
     this.streak = 0;
     this.bestStreak = 0;
@@ -1466,39 +1450,38 @@ class GameScene extends Phaser.Scene {
       });
     }
 
-    // ---- STAGE: the cast lives here ----
-    const stageX = 10, stageW = width - 20;
-    this.stagePanel = this.add.graphics();
-    this.stagePanel.fillStyle(P.inkN, 1);
-    this.stagePanel.fillRoundedRect(stageX, STAGE_Y + 4, stageW, STAGE_H, 14);
-    this.stagePanel.fillStyle(P.panelN, 1);
-    this.stagePanel.fillRoundedRect(stageX, STAGE_Y, stageW, STAGE_H, 14);
-    this.stagePanel.lineStyle(3, P.inkN, 1);
-    this.stagePanel.strokeRoundedRect(stageX, STAGE_Y, stageW, STAGE_H, 14);
-    // A dashed ground line, as in the app's scenes, and a couple of doodle clouds.
-    const groundY = STAGE_Y + STAGE_H - 26;
-    this.stageDeco = this.add.graphics().setDepth(1);
-    this.stageDeco.fillStyle(P.inkN, 0.55);
-    for (let x = stageX + 14; x < stageX + stageW - 10; x += 9) this.stageDeco.fillRect(x, groundY + 1, 3, 2);
+    // ---- FEVER GROUND: hidden until fever, then the whole page changes under the board ----
+    this.fx = new PopFx(this);
+    this.feverBg = this.add.container(0, 0).setDepth(-19).setAlpha(0);
+    {
+      const feverGround = P.inkIsLight ? P.bg : P.hot;
+      const rayCol = P.inkIsLight ? mixHex(P.bg, P.hot, 0.3) : mixHex(P.hot, P.ink, 0.13);
+      const g = this.add.graphics();
+      g.fillStyle(_toInt(feverGround), 1); g.fillRect(0, 0, width, height);
+      const rays = this.add.graphics().setPosition(width / 2, BOARD_Y + 280);
+      rays.fillStyle(_toInt(rayCol), 1);
+      for (let i = 0; i < 22; i += 2) {
+        const a0 = (i / 22) * Math.PI * 2, a1 = ((i + 1) / 22) * Math.PI * 2;
+        rays.beginPath(); rays.moveTo(0, 0); rays.lineTo(Math.cos(a0) * 900, Math.sin(a0) * 900); rays.lineTo(Math.cos(a1) * 900, Math.sin(a1) * 900); rays.closePath(); rays.fillPath();
+      }
+      this.feverRays = rays;
+      this.feverBg.add([g, rays]);
+    }
+    // The multiplier, huge, behind the heads: readable across the room, never covering a face.
+    this.bigMult = this.add.text(width / 2, BOARD_Y + 290, '', textStyle('heading', { fontSize: '300px', color: P.hot, strokeThickness: 0 })).setOrigin(0.5).setAlpha(0).setDepth(-3);
 
-    this.cast = new Cast(this, stageX, STAGE_Y, stageW, STAGE_H);
-    // Name tags under the ground line.
-    [this.cast.spark, this.cast.hero, this.cast.pro, this.cast.bolt].forEach((m) => {
-      this.add.text(stageX + m.x, groundY + 9, m.name.toUpperCase(), textStyle('label', { fontSize: '9px', color: P.muted, letterSpacing: 2 })).setOrigin(0.5, 0).setDepth(5);
-    });
-
-    // Streak banner lives in the top band of the stage; no figure reaches it at rest.
+    // ---- COMBO BAND: multiplier sticker, HOT meter, streak line ----
     this.hypeBar = this.add.container(0, 0).setDepth(6);
-    this.streakText = this.add.text(stageX + 14, STAGE_Y + 9, '', textStyle('heading', { fontSize: '24px', strokeThickness: 0, color: P.hot })).setOrigin(0, 0).setAlpha(0);
-    this.adlibText = this.add.text(stageX + stageW - 14, STAGE_Y + 13, '', textStyle('stat', { fontSize: '18px', fontStyle: 'bold italic', color: P.ink })).setOrigin(1, 0).setAlpha(0);
+    this.streakText = this.add.text(0, 0, '').setAlpha(0);
+    this.adlibText = this.add.text(0, 0, '').setAlpha(0);
     this.charNameText = this.add.text(-100, -100, '').setAlpha(0);
     this.characterGfx = this.add.graphics().setAlpha(0);
-    this.hypeBar.add([this.streakText, this.adlibText]);
 
     // ---- BOARD PANEL ----
-    const boardX = GRID_OFFSET_X - 10, boardY = GRID_OFFSET_Y - 6;
-    const boardW = GRID_COLS * (BUBBLE_SIZE + BUBBLE_PAD) + 16, boardH = GRID_ROWS * (BUBBLE_SIZE + BUBBLE_PAD) + 8;
-    const board = this.add.graphics().setDepth(-5);
+    const boardX = GRID_OFFSET_X - 8, boardY = BOARD_Y;
+    const boardW = GRID_COLS * CELL + 16, boardH = GRID_ROWS * CELL + 22;
+    this.boardGfx = this.add.graphics().setDepth(-5);
+    const board = this.boardGfx;
     board.fillStyle(P.inkN, 1);
     board.fillRoundedRect(boardX, boardY + 4, boardW, boardH, 14);
     board.fillStyle(P.cardN, 1);
@@ -1506,14 +1489,29 @@ class GameScene extends Phaser.Scene {
     board.lineStyle(3, P.inkN, 1);
     board.strokeRoundedRect(boardX, boardY, boardW, boardH, 14);
     this.boardRect = { x: boardX, y: boardY, w: boardW, h: boardH };
+    this.boardMid = { x: boardX + boardW / 2, y: boardY + boardH / 2 };
 
-    // ---- FOOTER: multiplier badge, streak, best, tip ----
-    const footY = boardY + boardH + 14;
-    this.footY = footY;
-    this.streakCounter = this.add.text(96, footY + 4, '', textStyle('stat', { fontSize: '16px', color: P.ink, fontStyle: 'bold' })).setOrigin(0, 0);
-    this.bestStreakText = this.add.text(96, footY + 26, '', textStyle('muted', { fontSize: '13px', color: P.muted })).setOrigin(0, 0);
-    this.modeText = this.add.text(width - 18, footY + 6, this.gameMode === 'zen' ? 'ZEN MODE' : this.gameMode === 'daily' ? 'DAILY CHALLENGE' : 'TIMED MODE',
+    // ---- CREW TALLY STRIP: who has popped how many. The legend and the scoreboard in one. ----
+    const stripY = boardY + boardH + 10;
+    this.footY = stripY;
+    const strip = this.add.graphics();
+    strip.fillStyle(P.inkN, 1); strip.fillRoundedRect(boardX, stripY + 3, boardW, 70, 12);
+    strip.fillStyle(P.panelN, 1); strip.fillRoundedRect(boardX, stripY, boardW, 70, 12);
+    strip.lineStyle(3, P.inkN, 1); strip.strokeRoundedRect(boardX, stripY, boardW, 70, 12);
+    this.crewTally = CREW.map((m, i) => {
+      const slot = boardW / CREW.length, cx = boardX + slot * (i + 0.5);
+      const img = addHead(this, cx - 12, stripY + 28, i, 'idle0').setScale(0.62 * BS).setDepth(2);
+      const tally = this.add.text(cx + 15, stripY + 24, '0', textStyle('heading', { fontSize: '19px', color: P.ink, strokeThickness: 0 })).setOrigin(0, 0.5).setDepth(2);
+      this.add.text(cx, stripY + 56, m.name.toUpperCase(), textStyle('label', { fontSize: '11px', color: P.muted, letterSpacing: 1 })).setOrigin(0.5).setDepth(2);
+      return { img, tally, count: 0, life: newLife(i + 40), mood: 'idle', moodEnd: 0, hop: 0, baseY: stripY + 28, crew: i };
+    });
+    this.modeText = this.add.text(width - 18, stripY + 84, this.gameMode === 'zen' ? 'ZEN MODE' : this.gameMode === 'daily' ? 'DAILY CHALLENGE' : 'TIMED MODE',
       textStyle('label', { fontSize: '12px', color: P.muted, letterSpacing: 2 })).setOrigin(1, 0);
+    this.bestStreakText = this.add.text(18, stripY + 83, '', textStyle('muted', { fontSize: '13px', color: P.muted })).setOrigin(0, 0);
+
+    // The band: a multiplier sticker at left, the HOT meter beside it, the streak line under the meter.
+    this.streakCounter = this.add.text(82, BAND_Y + 42, '', textStyle('stat', { fontSize: '17px', color: P.ink, fontStyle: 'bold', align: 'left' })).setOrigin(0, 0);
+    this.tierText = this.add.text(width - 14, BAND_Y + 42, '', textStyle('stat', { fontSize: '17px', color: P.hot, fontStyle: 'bold italic', align: 'right' })).setOrigin(1, 0);
 
     // ---- POWER-UP OVERLAY (drawn each frame for pulsing effects) ----
     this.powerUpOverlay = this.add.graphics();
@@ -1536,13 +1534,9 @@ class GameScene extends Phaser.Scene {
 
     // Ambient particles
     this.spawnAmbientParticles();
-    // The board breathes: one random bubble wiggles now and then.
-    if (!this.reduce) this.time.addEvent({ delay: 900, loop: true, callback: () => {
-      if (this.isPaused || this.gameOver || this.isProcessing) return;
-      const b = this.grid[Phaser.Math.Between(0, GRID_ROWS - 1)]?.[Phaser.Math.Between(0, GRID_COLS - 1)];
-      if (!b || !b.active || b.getData('wob')) return;
-      this.tweens.add({ targets: b, angle: { from: -9, to: 9 }, scaleY: 0.95 * BS * 1.07, scaleX: 0.95 * BS * 0.96, duration: 130, yoyo: true, repeat: 1, ease: 'Sine.easeInOut', onComplete: () => { if (b.active) { b.angle = 0; b.setScale(0.95 * BS); } } });
-    } });
+    // The crew's idle life (blinks, glances, leaning toward a move) runs in updateHeads(), once per frame.
+    this.sinceInput = 0; this.tell = null; this.nextTell = 0; this.feverClock = 0; this.lastBeat = -1; this.pulse = 0; this.panic = false;
+    this.feverTally = new FeverTally();
 
     // ---- HUD TOOLBAR (pause / hint / mute) ----
     const tbSize = 40;
@@ -1614,29 +1608,26 @@ class GameScene extends Phaser.Scene {
       }
     });
 
-    // ---- MULTIPLIER BADGE (bottom left, visible during active streaks) ----
-    this.multBadge = this.add.container(52, footY + 26).setDepth(30).setAlpha(0);
+    // ---- MULTIPLIER STICKER (band, left): always on, so the layout never jumps ----
+    this.multBadge = this.add.container(44, BAND_Y + 33).setDepth(30);
     this.multRing = this.add.graphics();
     this.multBadge.add(this.multRing);
-    this.multText = this.add.text(0, -2, '',
-      textStyle('heading', { fontSize: '22px', strokeThickness: 0 })).setOrigin(0.5);
+    this.multText = this.add.text(0, -1, '',
+      textStyle('heading', { fontSize: '30px', strokeThickness: 0 })).setOrigin(0.5);
     this.multBadge.add(this.multText);
-    this.multLabel = this.add.text(0, 14, 'MULT',
-      textStyle('label', { fontSize: '7px', letterSpacing: 1, color: P.muted })).setOrigin(0.5);
+    this.multLabel = this.add.text(0, 40, '', textStyle('label', { fontSize: '1px', color: P.muted })).setOrigin(0.5).setAlpha(0);
     this.multBadge.add(this.multLabel);
+    this.updateMultiplierBadge();
 
-    // ---- FEVER METER (left-edge vertical bar beside the board) ----
+    // ---- HOT METER (band, right of the sticker) ----
     this.feverGfx = this.add.graphics().setDepth(35);
-    const fmX = 9;
-    const fmTop = GRID_OFFSET_Y + 14;
-    const fmH = GRID_ROWS * (BUBBLE_SIZE + BUBBLE_PAD) - 30;
-    this.feverBarBounds = { x: fmX, y: fmTop, w: 14, h: fmH };
-    this.feverLabelText = this.add.text(fmX + 7, fmTop - 6, 'HOT',
-      textStyle('label', { fontSize: '8px', color: P.muted, letterSpacing: 0 }))
-      .setOrigin(0.5, 1).setDepth(36);
-    this.feverPctText = this.add.text(fmX + 7, fmTop + fmH + 6, '',
-      textStyle('badge', { fontSize: '11px', color: P.muted, stroke: '', strokeThickness: 0 }))
-      .setOrigin(0.5, 0).setDepth(36);
+    this.feverBarBounds = { x: 86, y: BAND_Y + 6, w: width - 86 - 14, h: 30 };
+    this.feverLabelText = this.add.text(98, BAND_Y + 21, 'HOT',
+      textStyle('badge', { fontSize: '14px', color: P.muted, stroke: '', strokeThickness: 0, letterSpacing: 2 }))
+      .setOrigin(0, 0.5).setDepth(36);
+    this.feverPctText = this.add.text(width - 24, BAND_Y + 21, '',
+      textStyle('badge', { fontSize: '15px', color: P.muted, stroke: '', strokeThickness: 0 }))
+      .setOrigin(1, 0.5).setDepth(36);
 
     // Fever drain timer: the meter decays when not matching
     this.time.addEvent({
@@ -1661,7 +1652,7 @@ class GameScene extends Phaser.Scene {
       duration: 520, ease: 'Quad.easeIn', delay: 520,
       onComplete: () => goText.destroy(),
     });
-    this.cast.hero.setPose('pointUp', 120); this.cast.hero.hop(1.2); this.cast.hero.setFace('grin'); this.cast._hold(900);
+    this.crewCheer(900);
   }
 
   // -----------------------------------------------------------
@@ -1775,16 +1766,155 @@ class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Skip per-frame rendering while paused — avoids GPU work behind the
-    // pause overlay and prevents visual flicker from animated effects.
+    // Skip per-frame rendering while paused: no GPU work behind the pause overlay.
     if (this.isPaused) return;
+    if (this.stopMs > 0) {
+      this.stopMs -= delta;
+      if (this.stopMs <= 0) { this.stopMs = 0; this.tweens.timeScale = 1; this.time.timeScale = 1; }
+    }
     this.renderPowerUpOverlays(time);
     this.renderFeverMeter(time);
     this.renderHintGlow(time);
-    if (this.feverActive && !this.reduce && !this.isProcessing) {
-      forEachCell((r, c) => { const b = this.grid[r]?.[c]; if (b && b.active && !b.getData('wob')) b.setScale(BS * (0.95 + 0.05 * Math.sin(time * 0.014 + c * 0.9 + r * 0.5))); });
+    if (this.fx) this.fx.update(delta);
+    this.updateFever(time, delta);
+    this.updateHeads(time, delta);
+    this.updateTally(time);
+  }
+
+  // -----------------------------------------------------------
+  // THE CREW'S LIFE: every head blinks, glances, leans and reacts
+  // -----------------------------------------------------------
+
+  /** Upper rows draw over lower rows, so an accessory poking up (spikes, antenna) tucks behind the head above it. */
+  headDepth(b) { if (b && b.active) b.setDepth(20 - b.getData('row')); }
+  resortHeads() { if (this.bubbleContainer) this.bubbleContainer.sort('depth'); }
+
+  /** Make a head show crew member `idx` (data and frame together). */
+  applyCrew(b, idx) {
+    b.setData('colorIdx', idx);
+    b.hd.frame = '';
+    b.setFrame(`${idx}_idle0`);
+  }
+
+  /** Force a face for a while: 'squeeze', 'peek', 'hit', 'cheer0', 'worry'. It reverts on its own. */
+  setMood(b, mood, ms) {
+    if (!b || !b.active || !b.hd) return;
+    b.hd.mood = mood; b.hd.moodEnd = this.time.now + ms;
+  }
+
+  /** Everyone cheers for `ms`: the GO! beat, a fever start, a chain. */
+  crewCheer(ms) {
+    forEachCell((r, c) => { const b = this.grid[r]?.[c]; if (b && b.active) this.setMood(b, (r + c) % 2 ? 'cheer1' : 'cheer0', ms); });
+  }
+
+  /** Pick one move the board is waiting for and make its heads lean toward it. Rotates every couple of seconds. */
+  chooseTell(time) {
+    const colors = this.grid.map((row) => row.map((b) => (b && b.active ? b.getData('colorIdx') : -1)));
+    const moves = findMoves(colors, GRID_ROWS, GRID_COLS);
+    this.nextTell = time + 2400;
+    if (!moves.length) { this.tell = null; return; }
+    const m = Phaser.Math.RND.pick(moves);
+    const cells = new Map();
+    const dir = (from, to) => ({ dx: Math.sign(to.c - from.c), dy: Math.sign(to.r - from.r) });
+    m.line.forEach((cell) => {
+      if (cell.r === m.dest.r && cell.c === m.dest.c) return;
+      cells.set(`${cell.r},${cell.c}`, { kind: 'friend', ...dir(cell, m.dest) });
+    });
+    cells.set(`${m.mover.r},${m.mover.c}`, { kind: 'mover', ...dir(m.mover, m.dest) });
+    this.tell = { cells, until: time + 2200 };
+  }
+
+  updateHeads(time, delta) {
+    if (this.gameOver) return;
+    const fever = this.feverActive;
+    const idle = !this.isProcessing;
+    const bp = fever ? beatPhase(this.feverClock, FEVER_BPM) : null;
+    // The crew's "tell": after a beat of quiet, heads beside a possible match lean toward it.
+    if (idle && !fever && !this.hintActive) {
+      this.sinceInput += delta;
+      if (this.sinceInput > 1800 && time >= this.nextTell) this.chooseTell(time);
+    } else { this.sinceInput = idle ? this.sinceInput : 0; if (this.tell) this.tell = null; }
+    if (this.tell && time > this.tell.until) this.tell = null;
+    const tell = this.tell;
+    const sw = this.swipeBubble;
+    const now = this.time.now;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      const row = this.grid[r];
+      for (let c = 0; c < GRID_COLS; c++) {
+        const b = row[c];
+        if (!b || !b.active || !b.hd) continue;
+        const hd = b.hd;
+        if (hd.mood !== 'idle' && now > hd.moodEnd) hd.mood = 'idle';
+        let mood = hd.mood, look = 0, ang = 0, sx = 1, sy = 1, dy = 0, ox = 0;
+        if (idle) {
+          if (fever) {
+            const ds = danceState(bp.beat, bp.frac, c, r, this.reduce);
+            if (mood === 'idle') mood = ds.frame;
+            ang = ds.ang; sx = ds.sx; sy = ds.sy; dy = ds.dy;
+          } else {
+            if (sw && sw !== b && Math.abs(sw.getData('col') - c) <= 2 && Math.abs(sw.getData('row') - r) <= 2) look = Math.sign(sw.getData('col') - c) || (c % 2 ? 1 : -1);
+            const t = tell && tell.cells.get(`${r},${c}`);
+            if (t && mood === 'idle') {
+              const k = 0.5 + 0.5 * Math.sin(time / 190);
+              if (t.kind === 'mover') { mood = 'peek'; ox = t.dx * 3.2 * k; dy = t.dy * 3.2 * k; ang = t.dx * 6 * k; }
+              else { look = t.dx || (t.dy ? (c % 2 ? 1 : -1) : 0); ang = (t.dx || t.dy) * 4 * k; dy = t.dy * 2 * k; ox = t.dx * 2 * k; if (!look) mood = 'peek'; }
+            }
+            if (this.panic && mood === 'idle' && ((r * 7 + c * 3 + Math.floor(time / 700)) % 5 === 0)) mood = 'worry';
+            if (this.panic && !this.reduce) ang += Math.sin(time / 38 + r + c) * 1.4;
+          }
+          if (b !== this.selected && b !== sw && b.getData('wob') == null) {
+            const base = this.gridToWorld(r, c);
+            b.setPosition(base.x + ox, base.y + dy);
+            b.setAngle(ang);
+            b.setScale(BS * sx, BS * sy);
+          }
+        }
+        const frame = `${b.getData('colorIdx')}_${lifeFrame(hd.life, time, mood, look, this.reduce)}`;
+        if (frame !== hd.frame) { hd.frame = frame; b.setFrame(frame); }
+      }
     }
-    if (this.cast) this.cast.update(time, delta);
+  }
+
+  /** The crew tally strip: each member blinks, and bounces when its colour pops. */
+  updateTally(time) {
+    if (!this.crewTally) return;
+    const now = this.time.now;
+    for (const m of this.crewTally) {
+      if (m.mood !== 'idle' && now > m.moodEnd) m.mood = 'idle';
+      const frame = `${m.crew}_${lifeFrame(m.life, time, this.feverActive && m.mood === 'idle' ? 'cheer0' : m.mood, 0, this.reduce)}`;
+      if (frame !== m.frame) { m.frame = frame; m.img.setFrame(frame); }
+      m.img.y = m.baseY - m.hop;
+    }
+  }
+
+  /** Credit a colour for pops: the tally ticks up and that crew member hops. */
+  tallyPop(crew, n) {
+    const m = this.crewTally && this.crewTally[crew];
+    if (!m) return;
+    m.count += n;
+    m.tally.setText(`${m.count}`);
+    m.mood = 'cheer0'; m.moodEnd = this.time.now + 420;
+    if (!this.reduce) {
+      this.tweens.add({ targets: m, hop: 10, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
+      this.tweens.add({ targets: m.tally, scale: 1.3, duration: 90, yoyo: true });
+    }
+  }
+
+  /** A speech bubble over a head: the crew shouts. Sticker style: ink outline, hard shadow, a little tail. */
+  shout(text, x, y, big) {
+    const fs = big ? 20 : 16;
+    const t = this.add.text(0, 0, text, textStyle('badge', { fontSize: `${fs}px`, color: '#0a0a0a', stroke: '', strokeThickness: 0 })).setOrigin(0.5);
+    const w = t.width + 22, h = t.height + 12;
+    const cx = Phaser.Math.Clamp(x, 8 + w / 2, VIEW.width - 8 - w / 2), cy = Math.max(y, BOARD_Y + 10 + h / 2);
+    const g = this.add.graphics();
+    g.fillStyle(P.inkN, 1); g.fillRoundedRect(-w / 2, -h / 2 + 3, w, h, 10);
+    g.fillStyle(0xffffff, 1); g.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
+    g.lineStyle(3, P.inkN, 1); g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
+    g.fillStyle(0xffffff, 1); g.fillTriangle(-6 + (x - cx) * 0.3, h / 2 - 1, 8 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11);
+    g.lineStyle(3, P.inkN, 1); g.lineBetween(-6 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11); g.lineBetween(8 + (x - cx) * 0.3, h / 2 - 1, (x - cx) * 0.5, h / 2 + 11);
+    const box = this.add.container(cx, cy, [g, t]).setDepth(40).setScale(0.3).setAngle(this.reduce ? 0 : Phaser.Math.Between(-6, 6));
+    this.tweens.add({ targets: box, scale: 1, duration: 180, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: box, alpha: 0, y: cy - 22, duration: 300, delay: 820, ease: 'Quad.easeIn', onComplete: () => box.destroy() });
   }
 
   // -----------------------------------------------------------
@@ -1827,47 +1957,41 @@ class GameScene extends Phaser.Scene {
    */
   renderFeverMeter(time) {
     if (!this.feverGfx) return;
-    this.feverGfx.clear();
+    const g = this.feverGfx;
+    g.clear();
     const fb = this.feverBarBounds;
-    const fill = this.feverActive ? 100 : this.feverMeter;
+    const fever = this.feverActive;
+    const frac = fever ? Phaser.Math.Clamp(this.feverTimer / 6000, 0.04, 1) : Phaser.Math.Clamp(this.feverMeter / 100, 0, 1);
 
-    // Track: a rounded tube with an ink outline.
-    this.feverGfx.fillStyle(P.cardN, 1);
-    this.feverGfx.fillRoundedRect(fb.x, fb.y, fb.w, fb.h, 6);
-    if (fill > 0) {
-      const fillH = Math.max(8, (fill / 100) * fb.h);
-      const fillY = fb.y + fb.h - fillH;
-      const pulse = this.feverActive ? 0.75 + 0.25 * Math.sin(time * 0.012) : 1;
-      this.feverGfx.fillStyle(P.hotN, pulse);
-      this.feverGfx.fillRoundedRect(fb.x + 1.5, fillY, fb.w - 3, fillH - 1.5, 4);
+    // Track: a rounded tube with a hard shadow and an ink outline, like every card in the game.
+    g.fillStyle(P.inkN, 1); g.fillRoundedRect(fb.x, fb.y + 3, fb.w, fb.h, 10);
+    g.fillStyle(P.cardN, 1); g.fillRoundedRect(fb.x, fb.y, fb.w, fb.h, 10);
+    if (frac > 0) {
+      const w = Math.max(14, frac * (fb.w - 6));
+      const beatK = fever ? 0.78 + 0.22 * Math.sin(time * 0.016) : 1;
+      g.fillStyle(P.hotN, beatK);
+      g.fillRoundedRect(fb.x + 3, fb.y + 3, w, fb.h - 6, 7);
     }
-    this.feverGfx.lineStyle(2.5, P.inkN, 1);
-    this.feverGfx.strokeRoundedRect(fb.x, fb.y, fb.w, fb.h, 6);
-    if (this.feverActive && !this.reduce && Math.random() < 0.5) {
-      const sp = this.add.image(Phaser.Math.Between(50, 420), this.boardRect.y + this.boardRect.h - 8, 'particle').setTint(P.hotN).setScale(Phaser.Math.FloatBetween(0.8, 1.6) * BS).setDepth(9);
-      this.tweens.add({ targets: sp, y: sp.y - Phaser.Math.Between(120, 320), alpha: 0, duration: Phaser.Math.Between(700, 1200), onComplete: () => sp.destroy() });
-    }
+    g.lineStyle(3, P.inkN, 1); g.strokeRoundedRect(fb.x, fb.y, fb.w, fb.h, 10);
 
-    // Fever active: the board glows in the accent and an accent frame wraps the screen.
-    if (this.feverActive) {
+    // Fever: ink frames around the screen and the board, thicker on the beat.
+    if (fever) {
+      const k = 0.55 + 0.45 * this.pulse;
       const br = this.boardRect;
-      this.feverGfx.lineStyle(6, P.hotN, 0.55 + 0.35 * Math.sin(time * 0.012));
-      this.feverGfx.strokeRoundedRect(br.x - 2, br.y - 2, br.w + 4, br.h + 4, 15);
-      const glow = 0.45 + 0.3 * Math.sin(time * 0.008);
-      this.feverGfx.lineStyle(6, P.hotN, glow);
-      this.feverGfx.strokeRect(3, 3, VIEW.width - 6, VIEW.height - 6);
+      g.lineStyle(5 + this.pulse * 5, P.inkN, k);
+      g.strokeRoundedRect(br.x - 3, br.y - 3, br.w + 6, br.h + 6, 16);
+      g.lineStyle(7, P.inkN, 0.9);
+      g.strokeRect(3, 3, VIEW.width - 6, VIEW.height - 6);
     }
 
-    if (!this.feverActive && fill > 0) {
-      this.feverPctText.setText(`${Math.floor(fill)}`);
-      this.feverPctText.setColor(fill > 80 ? P.hot : P.muted);
-    } else if (this.feverActive) {
-      this.feverPctText.setText(`${Math.ceil(this.feverTimer / 1000)}s`);
-      this.feverPctText.setColor(P.hot);
-    } else {
-      this.feverPctText.setText('');
-    }
-    this.feverLabelText.setColor(this.feverActive ? P.hot : P.muted);
+    // Text sits on the card or on the hot fill: pick whichever reads on what is under it.
+    const onHot = contrastPick(P.hot, ['#0a0a0a', '#ffffff']), onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
+    const labelCovered = frac * (fb.w - 6) > 76;
+    this.feverLabelText.setText(fever ? 'FEVER' : 'HOT');
+    this.feverLabelText.setColor(labelCovered ? onHot : onCard);
+    if (fever) { this.feverPctText.setText(`${Math.ceil(this.feverTimer / 1000)}s`); this.feverPctText.setColor(frac > 0.94 ? onHot : onCard); }
+    else if (frac > 0.04) { this.feverPctText.setText(`${Math.floor(frac * 100)}%`); this.feverPctText.setColor(frac > 0.94 ? onHot : onCard); }
+    else this.feverPctText.setText('');
   }
 
   /**
@@ -1931,7 +2055,7 @@ class GameScene extends Phaser.Scene {
         this.tweens.add({ targets: this.timerText, scale: 1.3, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
         this.shake(60, 0.0012);
       }
-      this.cast.setPanic(true);
+      this.panic = true;
     }
   }
 
@@ -1962,7 +2086,7 @@ class GameScene extends Phaser.Scene {
   showAchievementToast(ach, delay = 0) {
     const toastW = 214;
     const toastX = VIEW.width - 18 - toastW / 2;
-    const toastY = this.footY + 24;
+    const toastY = this.footY + 104;
     if (this.modeText) this.modeText.setAlpha(0);
     const container = this.add.container(toastX + 40, toastY).setDepth(70).setAlpha(0);
     const bg = this.add.graphics();
@@ -2052,7 +2176,9 @@ class GameScene extends Phaser.Scene {
 
     window.audioEngine.stopBgBeat();
     this.tweens.timeScale = 1; this.time.timeScale = 1;
-    this.cast.setPanic(false); this.cast.finish(this.score >= 1500);
+    this.panic = false;
+    // The crew takes a bow (or winces) before the result screen.
+    { const good = this.score >= 1500; forEachCell((r, c) => { const b = this.grid[r]?.[c]; if (b && b.active) this.setMood(b, good ? ((r + c) % 2 ? 'cheer1' : 'cheer0') : 'worry', 1200); }); }
 
     // Play final sound
     window.audioEngine.playStreakHit(12);
@@ -2121,39 +2247,75 @@ class GameScene extends Phaser.Scene {
     for (let row = 0; row < GRID_ROWS; row++) {
       this.grid[row] = [];
       for (let col = 0; col < GRID_COLS; col++) {
-        this.spawnBubble(row, col, true);
+        this.spawnBubble(row, col, true, (GRID_ROWS + 1) * CELL, (GRID_ROWS - 1 - row) * 38 + col * 22);
       }
     }
     this.resolveInitialMatches();
   }
 
-  spawnBubble(row, col, animate = false) {
+  /**
+   * Add one head to the board. With `fall` it drops in from above the board: a stretched falling face, then a landing
+   * with squash and a small bounce (see landHead). `delay` staggers a refill from the bottom up.
+   */
+  spawnBubble(row, col, animate = false, fall = 0, delay = 0) {
     const colorIdx = this.dailyRng
       ? Math.floor(this.dailyRng() * COLORS.length)
       : Phaser.Math.Between(0, COLORS.length - 1);
     const pos = this.gridToWorld(row, col);
 
-    const bubble = this.add.image(pos.x, animate ? GRID_OFFSET_Y - 70 : pos.y, bubbleKey(colorIdx));
-    bubble.setInteractive();
+    const bubble = addHead(this, pos.x, animate ? pos.y - fall : pos.y, colorIdx, 'idle0');
+    bubble.setInteractive(headHitArea(CELL), Phaser.Geom.Circle.Contains);
+    bubble.hd = { life: newLife(row * GRID_COLS + col + Math.random() * 5), mood: 'idle', moodEnd: 0, frame: '' };
     bubble.setData('row', row);
     bubble.setData('col', col);
     bubble.setData('colorIdx', colorIdx);
     bubble.setData('powerUp', POWERUP_TYPES.NONE);
-    bubble.setScale(0.95 * BS);
+    bubble.setScale(BS);
 
     this.bubbleContainer.add(bubble);
     this.grid[row][col] = bubble;
+    this.headDepth(bubble);
+    this.resortHeads();
 
     if (animate) {
       bubble.setAlpha(0);
+      bubble.hd.mood = 'peek'; bubble.hd.moodEnd = this.time.now + 99999;
+      const cells = fall / CELL;
+      const dur = this.reduce ? 1 : 120 + Math.sqrt(Math.max(1, cells)) * 125;
       this.tweens.add({
-        targets: bubble, y: pos.y, alpha: { value: 1, duration: 120 },
-        duration: 340 + row * 34, ease: 'Back.easeOut',
-        delay: col * 22 + row * 12,
+        targets: bubble, y: pos.y, alpha: { value: 1, duration: 80 },
+        duration: dur, ease: 'Quad.easeIn', delay,
+        onStart: () => { if (!this.reduce) bubble.setScale(BS * 0.92, BS * 1.1); },
+        onComplete: () => this.landHead(bubble, cells),
       });
     }
 
     return bubble;
+  }
+
+  /** A head lands: squash flat, stretch back up with a little hop, settle. Heavier for longer falls. */
+  landHead(bubble, cells) {
+    if (!bubble.active) return;
+    bubble.hd.mood = 'idle'; bubble.hd.moodEnd = 0;
+    window.audioEngine.playLand(0);
+    if (this.reduce) { bubble.setScale(BS); return; }
+    const h = Math.min(cells, 4);
+    const row = bubble.getData('row'), col = bubble.getData('col');
+    const base = this.gridToWorld(row, col);
+    if (cells >= 2) this.fx.puff(base.x, base.y + 20, 0.7 + h * 0.12);
+    this.tweens.add({
+      targets: bubble, scaleX: BS * (1.1 + 0.035 * h), scaleY: BS * (0.82 - 0.03 * h), y: base.y + 2, duration: 60, ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (!bubble.active) return;
+        this.tweens.add({
+          targets: bubble, scaleX: BS * 0.95, scaleY: BS * 1.07, y: base.y - 2 - h * 1.6, duration: 80, ease: 'Quad.easeOut',
+          onComplete: () => {
+            if (!bubble.active) return;
+            this.tweens.add({ targets: bubble, scaleX: BS, scaleY: BS, y: base.y, duration: 110, ease: 'Bounce.easeOut' });
+          },
+        });
+      },
+    });
   }
 
   gridToWorld(row, col) {
@@ -2170,8 +2332,7 @@ class GameScene extends Phaser.Scene {
       matches.forEach(group => {
         const b = group[group.length - 1];
         const newColor = this.getColorWithoutMatch(b.getData('row'), b.getData('col'));
-        b.setData('colorIdx', newColor);
-        b.setTexture(bubbleKey(newColor));
+        this.applyCrew(b, newColor);
       });
       safety++;
     }
@@ -2278,10 +2439,12 @@ class GameScene extends Phaser.Scene {
     const old = bubble.getData('wob');
     if (old) { old.stop(); bubble.setData('wob', null); }
     this.tweens.add({
-      targets: bubble, scale: (on ? 1.15 : 0.95) * BS, angle: 0,
+      targets: bubble, scale: (on ? 1.16 : 1) * BS, angle: 0,
       duration: 150, ease: 'Back.easeOut',
     });
-    bubble.setDepth(on ? 6 : 0);
+    if (on) bubble.setDepth(30); else this.headDepth(bubble);
+    this.resortHeads();
+    if (bubble.hd) { bubble.hd.mood = on ? 'peek' : 'idle'; bubble.hd.moodEnd = on ? 99999 + this.time.now : 0; }
     if (on && !this.reduce) {
       // A selected bubble wobbles like it wants to go.
       bubble.setData('wob', this.tweens.add({ targets: bubble, angle: { from: -5, to: 5 }, duration: 140, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 150 }));
@@ -2313,6 +2476,7 @@ class GameScene extends Phaser.Scene {
     this.grid[r2][c2] = a;
     a.setData('row', r2); a.setData('col', c2);
     b.setData('row', r1); b.setData('col', c1);
+    this.headDepth(a); this.headDepth(b); this.resortHeads();
 
     // Swap trail effect
     this.spawnSwapTrail(a, pos1, pos2);
@@ -2343,7 +2507,7 @@ class GameScene extends Phaser.Scene {
             }
           });
           window.audioEngine.playInvalid();
-          this.cast.onInvalid();
+          [a, b].forEach((h) => { this.setMood(h, 'worry', 520); if (!this.reduce) this.tweens.add({ targets: h, angle: { from: -10, to: 10 }, duration: 70, yoyo: true, repeat: 2, ease: 'Sine.easeInOut', onComplete: () => { if (h.active) h.angle = 0; } }); });
           this.shake(100, 0.003);
         } else {
           this.moveCount++;
@@ -2356,7 +2520,7 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnSwapTrail(bubble, from, to) {
-    const trail = this.add.image(from.x, from.y, bubbleKey(bubble.getData('colorIdx')));
+    const trail = addHead(this, from.x, from.y, bubble.getData('colorIdx'), 'lookR');
     trail.setAlpha(0.4);
     trail.setScale(0.6 * BS);
     trail.setDepth(1);
@@ -2499,6 +2663,11 @@ class GameScene extends Phaser.Scene {
     this.streak++;
     if (this.streak > this.bestStreak) this.bestStreak = this.streak;
     this.chainDepth = depth;
+    // How big this moment is: drives the splat size, drops, stars and the hit-stop. Bigger matches and deeper chains hit harder.
+    this.popBiggest = matchGroups.reduce((m, g) => Math.max(m, g.length), 3);
+    this.popPower = Math.min(2.4, 1 + (this.popBiggest - 3) * 0.2 + (depth - 1) * 0.3 + (this.feverActive ? 0.3 : 0));
+    this._stopDone = false;
+    this.sinceInput = 0; this.tell = null;
     if (depth > this.bestChain) this.bestChain = depth;
 
     let totalPopped = 0;
@@ -2608,6 +2777,7 @@ class GameScene extends Phaser.Scene {
     const feverMultiplier = this.feverActive ? 2 : 1;
     const points = safeScore((baseScore + sizeBonus + powerUpBonus + chainBonus) * streakMultiplier * feverMultiplier);
     this.score = safeScore(this.score + points);
+    this.feverTally.add(points, totalPopped);
     this.totalPopped += totalPopped;
     this.scoreText.setText(this.score.toLocaleString());
     this.bumpScore(points);
@@ -2619,18 +2789,22 @@ class GameScene extends Phaser.Scene {
       this.showScorePopup(first.x, first.y, label, this.streak);
     }
 
-    // ---- THE CAST REACTS ----
-    const px = matchGroups[0] && matchGroups[0][0] ? (matchGroups[0][0].x - GRID_OFFSET_X) / (GRID_COLS * (BUBBLE_SIZE + BUBBLE_PAD)) : 0.5;
-    this.cast.onPop(totalPopped, this.streak, px);
-    if (powerUpsToCreate.length) this.cast.onPowerUpMade();
-    if (powerUpsToActivate.length) this.cast.onBlast();
-    if (depth >= 2) this.cast.onChain(depth);
+    // ---- THE CREW REACTS: the heads that matched shout, the tally strip credits them ----
+    if (powerUpsToCreate.length || powerUpsToActivate.length || depth >= 2 || totalPopped >= 5) {
+      const lead = matchGroups.slice().sort((x, y) => y.length - x.length)[0];
+      const mid = lead && lead[Math.floor(lead.length / 2)];
+      if (mid && mid.active && this.time.now - (this._lastShout || 0) > 450) {
+        this._lastShout = this.time.now;
+        this.shout(crewLine(mid.getData('colorIdx'), shoutLevel(depth, this.feverActive)), mid.x, mid.y - 38, depth >= 3 || this.feverActive);
+      }
+    }
     if (!this.reduce) this.shake(70, 0.0016 + Math.min(totalPopped, 8) * 0.0004);
     // A big hit freezes the frame for a breath before it lands.
     if (totalPopped >= 6 || depth >= 3 || powerUpsToActivate.length) this.hitStop(depth >= 3 ? 130 : 85);
 
     // ---- CASCADE CHAIN BANNER ----
     if (depth >= 2) this.showChainBanner(depth);
+    if (depth >= 3 && !this.reduce) { this.crewCheer(650); this.fx.headRain(Math.min(6 + depth * 3, 24), 20, VIEW.width - 20, BOARD_Y - 20, VIEW.height, 52); }
 
     // ---- LIVE MILESTONES ----
     this.checkMilestones();
@@ -2738,193 +2912,225 @@ class GameScene extends Phaser.Scene {
     this.feverTimer = 6000; // 6 seconds base duration
     this.feverMeter = 100;
     this.feverCount++;
+    this.feverClock = 0; this.lastBeat = -1;
+    this.feverTally.start();
 
     const { width } = VIEW;
-    const cy = GRID_OFFSET_Y + 170;
-    // The moment: a slow-motion beat, a hard flash, a banner on a starburst, and the whole cast erupts.
+    const cy = this.boardMid.y - 30;
+    // The takeover: a slow-motion beat, a hard flash, the ground changes, the whole crew dances on the beat.
     const banner = this.add.text(width / 2, cy, 'FEVER!',
-      textStyle('heading', { fontSize: '54px', color: P.hot, stroke: P.bg, strokeThickness: 0 }),
-    ).setOrigin(0.5).setDepth(55).setScale(0);
-    const sub = this.add.text(width / 2, cy + 42, 'DOUBLE POINTS',
-      textStyle('badge', { fontSize: '16px', color: P.ink, stroke: '', strokeThickness: 0, letterSpacing: 3 }),
+      textStyle('heading', { fontSize: '92px', color: P.hot, stroke: P.ink, strokeThickness: 12 }),
+    ).setOrigin(0.5).setDepth(55).setScale(0).setAngle(-5);
+    const sub = this.add.text(width / 2, cy + 64, 'DOUBLE POINTS',
+      textStyle('badge', { fontSize: '22px', color: contrastPick(P.hot, ['#0a0a0a', '#ffffff']), stroke: P.ink, strokeThickness: 5, letterSpacing: 4 }),
     ).setOrigin(0.5).setDepth(55).setAlpha(0);
-
     this.tweens.add({
-      targets: banner, scale: 1.1, duration: 350, ease: 'Back.easeOut',
+      targets: banner, scale: 1.12, duration: 300, ease: 'Back.easeOut',
       onComplete: () => {
-        this.tweens.add({
-          targets: banner, scale: 1.6, alpha: 0,
-          duration: 600, delay: 500, ease: 'Quad.easeIn',
-          onComplete: () => banner.destroy(),
-        });
+        this.tweens.add({ targets: banner, scale: 1, duration: 160 });
+        this.tweens.add({ targets: banner, scale: 1.9, alpha: 0, duration: 520, delay: 640, ease: 'Quad.easeIn', onComplete: () => banner.destroy() });
       },
     });
     this.tweens.add({
-      targets: sub, alpha: 1, duration: 200, delay: 200,
-      onComplete: () => {
-        this.tweens.add({
-          targets: sub, alpha: 0, y: sub.y - 20,
-          duration: 400, delay: 700, ease: 'Quad.easeIn',
-          onComplete: () => sub.destroy(),
-        });
-      },
+      targets: sub, alpha: 1, duration: 180, delay: 180,
+      onComplete: () => this.tweens.add({ targets: sub, alpha: 0, y: sub.y - 24, duration: 360, delay: 760, ease: 'Quad.easeIn', onComplete: () => sub.destroy() }),
     });
-
-    // Dim the board under the banner so the title reads and the moment takes over the screen.
-    const plate = this.add.graphics().setDepth(54);
-    plate.fillStyle(P.inkN, 1); plate.fillRoundedRect(width / 2 - 150, cy - 44, 300, 104, 18);
-    plate.fillStyle(P.cardN, 1); plate.fillRoundedRect(width / 2 - 150, cy - 48, 300, 104, 18);
-    plate.lineStyle(4, P.inkN, 1); plate.strokeRoundedRect(width / 2 - 150, cy - 48, 300, 104, 18);
-    plate.setScale(0.6).setAlpha(0);
-    this.tweens.add({ targets: plate, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
-    this.tweens.add({ targets: plate, alpha: 0, duration: 300, delay: 800, onComplete: () => plate.destroy() });
     this.screenFlash(P.hotN);
-    this.shake(260, 0.014);
-    this.hitStop(320, 0.15);
-    this.cast.setFever(true);
-    this.confettiBurst(34);
-    this.boardWave(1.6);
+    this.shake(300, 0.016);
+    this.hitStop(300, 0.12);
+    this.crewCheer(1100);
+    this.confettiBurst(26);
+    this.boardWave(1.8);
+    this.pulse = 1;
     const rays = this.add.graphics().setDepth(53).setPosition(width / 2, cy + 4);
     rays.fillStyle(P.hotN, 0.9);
-    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, a2 = a + 0.11; rays.beginPath(); rays.moveTo(0, 0); rays.lineTo(Math.cos(a) * 230, Math.sin(a) * 230); rays.lineTo(Math.cos(a2) * 230, Math.sin(a2) * 230); rays.closePath(); rays.fillPath(); }
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, a2 = a + 0.11; rays.beginPath(); rays.moveTo(0, 0); rays.lineTo(Math.cos(a) * 260, Math.sin(a) * 260); rays.lineTo(Math.cos(a2) * 260, Math.sin(a2) * 260); rays.closePath(); rays.fillPath(); }
     rays.setScale(0.2).setAlpha(0.9);
     this.tweens.add({ targets: rays, scale: 1, alpha: 0, angle: 30, duration: 900, ease: 'Quad.easeOut', onComplete: () => rays.destroy() });
     window.audioEngine.playStreakHit(12);
+    this.updateMultiplierBadge();
+  }
+
+  /** Once per beat of the fever groove: the board kicks, a drum plays, the crew throws a few stars, now and then shouts. */
+  onFeverBeat(bp) {
+    if (!this.reduce) this.pulse = 1;
+    window.audioEngine.playBeat(bp.step);
+    if (!this.reduce && (bp.step === 0 || bp.step === 2)) {
+      for (let i = 0; i < 2; i++) {
+        const pos = this.gridToWorld(Phaser.Math.Between(0, GRID_ROWS - 1), Phaser.Math.Between(0, GRID_COLS - 1));
+        this.fx.stars(pos.x, pos.y, 3, 150, 0.9);
+      }
+    }
+    if (bp.step === 0 && bp.beat % 8 === 4) {
+      const b = this.grid[Phaser.Math.Between(0, GRID_ROWS - 1)]?.[Phaser.Math.Between(0, GRID_COLS - 1)];
+      if (b && b.active) this.shout(crewLine(b.getData('colorIdx'), 2), b.x, b.y - 34, true);
+    }
+    if (!this.reduce) this.tweens.add({ targets: this.multBadge, scale: (this.multBase || 1.4) * 1.14, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
+    if (this.bigMult && this.bigMult.active && !this.reduce) { this.bigMult.setScale(1.06); this.tweens.add({ targets: this.bigMult, scale: 1, duration: 200, ease: 'Quad.easeOut' }); }
+  }
+
+  /** Per-frame fever work: the ground fades in and out, the rays turn, the board pulses on the beat. */
+  updateFever(time, delta) {
+    if (!this.feverBg) return;
+    const fever = this.feverActive;
+    const target = fever ? 1 : 0;
+    const speed = this.reduce ? 1 : delta / (fever ? 200 : 450);
+    const a = this.feverBg.alpha;
+    this.feverBg.setAlpha(a < target ? Math.min(target, a + speed) : Math.max(target, a - speed));
+    if (this.feverBg.alpha > 0 && !this.reduce) this.feverRays.angle += delta * 0.014;
+    if (fever) {
+      this.feverClock += delta;
+      const bp = beatPhase(this.feverClock, FEVER_BPM);
+      if (bp.beat !== this.lastBeat) { this.lastBeat = bp.beat; this.onFeverBeat(bp); }
+      this.bigMult.setText(`×${effectiveMultiplier(this.streak, true)}`);
+      this.bigMult.setAlpha(0.2 + (this.reduce ? 0 : 0.1 * this.pulse));
+      if (!this.reduce && Math.random() < delta / 150) {
+        this.fx.spawn({ frame: Math.random() < 0.5 ? 'star_hot' : 'star_ink', x: Phaser.Math.Between(30, VIEW.width - 30), y: this.boardRect.y + this.boardRect.h - 6, vy: -170 - Math.random() * 150, vx: Phaser.Math.Between(-20, 20), rot: Math.random() * 60, vr: Phaser.Math.Between(-240, 240), s0: 0.3 + Math.random() * 0.2, s1: 0.1, dur: 1000, depth: 4, fadeAt: 0.6 });
+      }
+    } else if (this.bigMult.alpha > 0) {
+      this.bigMult.setAlpha(Math.max(0, this.bigMult.alpha - delta / 300));
+    }
+    // The board kicks on the beat, scaling about its centre.
+    if (this.pulse > 0.003) {
+      this.pulse *= Math.exp(-delta / 115);
+      const k = 1 + this.pulse * 0.024;
+      const m = this.boardMid;
+      this.bubbleContainer.setScale(k).setPosition(m.x * (1 - k), m.y * (1 - k));
+      this.boardGfx.setScale(k).setPosition(m.x * (1 - k), m.y * (1 - k));
+      this.pulsed = true;
+    } else if (this.pulsed) {
+      this.pulse = 0; this.pulsed = false;
+      this.bubbleContainer.setScale(1).setPosition(0, 0);
+      this.boardGfx.setScale(1).setPosition(0, 0);
+    }
   }
 
   deactivateFever() {
     this.feverActive = false;
     this.feverTimer = 0;
     this.feverMeter = 0;
-    this.cast.setFever(false);
+    const res = this.feverTally.end();
+    this.updateMultiplierBadge();
 
+    // The payoff: a plate lands on the board with what the fever earned, counting up, while the crew cheers once more.
     const { width } = VIEW;
-    const endText = this.add.text(width / 2, GRID_OFFSET_Y + 150, 'FEVER OVER',
-      textStyle('badge', { fontSize: '14px', color: P.ink, stroke: P.bg, strokeThickness: 4, letterSpacing: 2 }),
-    ).setOrigin(0.5).setDepth(55);
-    this.tweens.add({
-      targets: endText, alpha: 0, y: endText.y - 20,
-      duration: 800, delay: 400, ease: 'Quad.easeOut',
-      onComplete: () => endText.destroy(),
-    });
+    const cy = this.boardMid.y - 20;
+    const box = this.add.container(width / 2, cy).setDepth(58).setScale(this.reduce ? 1 : 0.2).setAlpha(this.reduce ? 1 : 0);
+    const bw = 330, bh = 170;
+    const g = this.add.graphics();
+    g.fillStyle(P.inkN, 1); g.fillRoundedRect(-bw / 2, -bh / 2 + 6, bw, bh, 20);
+    g.fillStyle(P.cardN, 1); g.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 20);
+    g.lineStyle(5, P.inkN, 1); g.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, 20);
+    const onCard = contrastPick(P.card, ['#0a0a0a', '#ffffff']);
+    const head = this.add.text(0, -bh / 2 + 28, res.total > 0 ? 'FEVER PAYOFF' : 'FEVER OVER', textStyle('badge', { fontSize: '20px', color: onCard, stroke: '', strokeThickness: 0, letterSpacing: 4 })).setOrigin(0.5);
+    const num = this.add.text(0, -2, res.total > 0 ? '+0' : '', textStyle('heading', { fontSize: '76px', color: P.hot, stroke: P.ink, strokeThickness: 9 })).setOrigin(0.5);
+    const line = this.add.text(0, bh / 2 - 30, res.total > 0 ? `${res.pops} heads popped in fever` : 'Match more to go again', textStyle('stat', { fontSize: '16px', color: onCard, fontStyle: 'bold' })).setOrigin(0.5);
+    box.add([g, head, num, line]);
+    if (!this.reduce) this.tweens.add({ targets: box, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
+    if (res.total > 0) {
+      this.tweens.addCounter({ from: 0, to: res.total, duration: this.reduce ? 1 : 700, delay: 120, ease: 'Cubic.easeOut',
+        onUpdate: (tw) => { num.setText(`+${Math.floor(tw.getValue()).toLocaleString()}`); },
+        onComplete: () => { num.setText(`+${res.total.toLocaleString()}`); if (!this.reduce) this.tweens.add({ targets: num, scale: 1.25, duration: 110, yoyo: true }); } });
+      this.crewCheer(1000);
+      if (!this.reduce) { this.fx.headRain(22, 20, width - 20, -10, VIEW.height, 57); this.fx.stars(width / 2, cy, 12, 260, 1.2); this.shake(160, 0.006); }
+      window.audioEngine.playStreakHit(12);
+    }
+    this.tweens.add({ targets: box, alpha: 0, y: cy - 30, duration: 320, delay: 1900, ease: 'Quad.easeIn', onComplete: () => box.destroy() });
   }
 
-  /** Paper confetti from the top of the board: the payoff for a fever. Skipped under reduced motion. */
+  /** Mini cheering heads rain from the top: the payoff for fever and big moments. Skipped under reduced motion. */
   confettiBurst(n = 30) {
     if (this.reduce) return;
-    const { width } = VIEW;
-    for (let i = 0; i < n; i++) {
-      const p = this.add.image(Phaser.Math.Between(20, width - 20), STAGE_Y + 20, 'conf');
-      p.setTint(Phaser.Math.RND.pick([...P.bubblesN, P.hotN]));
-      p.setScale(Phaser.Math.FloatBetween(0.8, 1.6) * BS).setDepth(52);
-      this.tweens.add({
-        targets: p, y: p.y + Phaser.Math.Between(200, 520), x: p.x + Phaser.Math.Between(-70, 70),
-        rotation: Phaser.Math.FloatBetween(-6, 6), alpha: { value: 0, delay: 600, duration: 500 },
-        duration: Phaser.Math.Between(900, 1500), delay: i * 14, ease: 'Quad.easeOut',
-        onComplete: () => p.destroy(),
-      });
-    }
+    this.fx.headRain(n, 20, VIEW.width - 20, -10, VIEW.height, 52);
   }
 
   /**
-   * Pop one bubble. A pop has three beats: a squash (anticipation), the burst (impact), and the aftermath
-   * (droplets, a ring, a nudge to every neighbour). `delay` ripples a match from one end to the other.
+   * Pop one head. A pop has four beats: the face squeezes and the body squashes (anticipation), the head stretches
+   * (wind-up), the splat frames burst out in the crew colour with drops and stars (impact), and the neighbours
+   * flinch (aftermath). `delay` ripples a match from one end to the other.
    */
   popBubble(bubble, delay = 0) {
     if (!bubble || !bubble.active) return;
     const row = bubble.getData('row');
     const col = bubble.getData('col');
     const colorIdx = bubble.getData('colorIdx');
-    const x = bubble.x, y = bubble.y;
+    const power = this.popPower || 1;
 
     if (this.grid[row] && this.grid[row][col] === bubble) {
       this.grid[row][col] = null;
     }
     bubble.disableInteractive();
-    bubble.setDepth(8);
+    bubble.setDepth(40);
+    this.resortHeads();
+    const squeeze = () => { if (bubble.active) bubble.setFrame(`${colorIdx}_squeeze`); };
 
     const burst = () => {
       if (!bubble.active) return;
-      this.spawnPopParticles(x, y, COLORS[colorIdx]);
-      this.spawnPopRing(x, y, COLORS[colorIdx]);
-      this.nudgeNeighbours(row, col);
-      this.tweens.add({
-        targets: bubble, scale: 1.7 * BS, alpha: 0, duration: 140, ease: 'Quad.easeOut',
-        onComplete: () => bubble.destroy(),
-      });
+      const x = bubble.x, y = bubble.y;
+      this.crewImpact(x, y, colorIdx, power, row, col);
+      bubble.destroy();
     };
-    if (this.reduce) { this.time.delayedCall(delay, burst); return; }
-    // Anticipation: the bubble swells, squashes and flashes white before it goes, so the pop reads as a release.
-    this.time.delayedCall(delay + 20, () => { if (bubble.active) bubble.setTintFill(0xffffff); });
+    if (this.reduce) { this.time.delayedCall(delay, squeeze); this.time.delayedCall(delay + 110, burst); return; }
+    // Anticipation: squash and squeeze, then stretch up like a held breath, then it goes.
     this.tweens.add({
-      targets: bubble, scaleX: 1.22 * BS, scaleY: 0.82 * BS, duration: 80, delay, ease: 'Quad.easeOut',
-      onComplete: burst,
+      targets: bubble, scaleX: 1.2 * BS, scaleY: 0.8 * BS, duration: 70, delay, ease: 'Quad.easeOut',
+      onStart: squeeze,
+      onComplete: () => {
+        if (!bubble.active) return;
+        this.tweens.add({ targets: bubble, scaleX: 0.84 * BS, scaleY: 1.26 * BS, y: bubble.y - 5, duration: 60, ease: 'Quad.easeOut', onComplete: burst });
+      },
     });
   }
 
-  /** A quick ring of shock that grows and fades where a bubble went. */
+  /** The moment a head bursts: ink splat frames, drops, stars and a ring, scaled by how big the match or chain is. */
+  crewImpact(x, y, crew, power, row, col) {
+    this.tallyPop(crew, 1);
+    const size = 0.9 + 0.32 * power;
+    this.fx.splat(x, y, crew, size);
+    this.fx.drops(x, y, crew, this.reduce ? 3 : Math.round(4 + power * 3 + (this.feverActive ? 3 : 0)), 120 + power * 50, 0.9 + power * 0.2);
+    if (!this.reduce && (power >= 1.3 || this.feverActive)) this.fx.stars(x, y, Math.round(2 + power * 2), 190 + power * 40, 0.8 + power * 0.25);
+    this.spawnPopRing(x, y, COLORS[crew]);
+    this.nudgeNeighbours(row, col, x, y);
+    // One hit-stop per move, on the first head to go, and longer for bigger moments.
+    if (!this._stopDone) {
+      this._stopDone = true;
+      const ms = Math.min(150, 34 + 22 * (this.popBiggest - 3) + 26 * (this.chainDepth - 1));
+      if (ms >= 40) this.hitStop(ms, 0.05);
+    }
+  }
+
+  /** A quick ring of shock that grows and fades where a head went. */
   spawnPopRing(x, y, color) {
     if (this.reduce) return;
     const ring = this.add.image(x, y, 'ring').setTint(P.inkN).setScale(0.35 * BS).setAlpha(1).setDepth(9);
     ring.setBlendMode(Phaser.BlendModes.NORMAL);
     this.tweens.add({
-      targets: ring, scale: 1.7 * BS, alpha: 0, duration: 320, ease: 'Quad.easeOut',
+      targets: ring, scale: 1.9 * BS, alpha: 0, duration: 300, ease: 'Quad.easeOut',
       onComplete: () => ring.destroy(),
     });
   }
 
-  /** The neighbours of a popped bubble lean away for a beat: it makes the board feel like one soft thing. */
-  nudgeNeighbours(row, col) {
-    if (this.reduce) return;
+  /** The neighbours of a popped head flinch: wide eyes, a lean away, a quick settle. The board feels like one soft thing. */
+  nudgeNeighbours(row, col, x, y) {
     [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
       const n = this.grid[row + dr]?.[col + dc];
       if (!n || !n.active || n.getData('nudging')) return;
+      this.setMood(n, 'peek', 380);
+      if (this.reduce) return;
       n.setData('nudging', true);
       const px = this.gridToWorld(row + dr, col + dc);
       this.tweens.add({
-        targets: n, x: px.x + dc * 3, y: px.y + dr * 3, duration: 70, yoyo: true, ease: 'Quad.easeOut',
+        targets: n, x: px.x + dc * 5, y: px.y + dr * 5, duration: 70, yoyo: true, ease: 'Quad.easeOut',
         onComplete: () => { if (n.active) { n.x = px.x; n.y = px.y; n.setData('nudging', false); } },
       });
     });
-  }
-
-  spawnPopParticles(x, y, color) {
-    const feverBoost = this.feverActive ? 1.5 : 1;
-    const count = Math.floor((8 + this.streak * 1.5) * feverBoost);
-    const n = Math.min(count, this.reduce ? 4 : 22);
-    for (let i = 0; i < n; i++) {
-      const star = this.streak >= 6 || this.feverActive;
-      const p = this.add.image(x, y, star && i % 2 ? 'star' : 'particle');
-      p.setTint(this.feverActive && i % 3 === 0 ? P.hotN : color);
-      p.setScale(Phaser.Math.FloatBetween(0.8, 1.5) * feverBoost * BS);
-      p.setDepth(10);
-      const angle = (i / n) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.3, 0.3);
-      const speed = Phaser.Math.FloatBetween(40, 84 + this.streak * 7);
-      // Droplets arc: out fast, then gravity.
-      this.tweens.add({
-        targets: p,
-        x: x + Math.cos(angle) * speed,
-        duration: Phaser.Math.Between(320, 560),
-        ease: 'Quad.easeOut',
-      });
-      this.tweens.add({
-        targets: p,
-        y: y + Math.sin(angle) * speed * 0.6 + 38,
-        alpha: 0,
-        scale: 0,
-        rotation: Phaser.Math.FloatBetween(-2, 2),
-        duration: Phaser.Math.Between(420, 620),
-        ease: (t) => 1.45 * t * t - 0.45 * t,
-        onComplete: () => p.destroy(),
-      });
-    }
   }
 
   showScorePopup(x, y, text, streak) {
     const level = getStreakLevel(streak);
     const size = level ? Math.min(level.size, 44) : 28;
     // A sticker: ink outline, the accent inside on streaks, the ink otherwise.
-    y = Math.max(y, GRID_OFFSET_Y + 34);
+    y = Math.max(y, GRID_OFFSET_Y + 40);
     const popup = this.add.text(x, y, text,
       textStyle('popup', { fontSize: `${size}px`, color: level ? P.hot : P.ink, stroke: P.bg, strokeThickness: 5 })).setOrigin(0.5).setDepth(20).setScale(0.4);
     this.tweens.add({ targets: popup, scale: 1.15, duration: 140, ease: 'Back.easeOut' });
@@ -2941,7 +3147,7 @@ class GameScene extends Phaser.Scene {
     forEachCell((r, c) => {
       const b = this.grid[r]?.[c];
       if (!b || !b.active) return;
-      this.tweens.add({ targets: b, scale: BS * (0.95 + 0.16 * strength), duration: 120, delay: c * 24 + r * 5, yoyo: true, ease: 'Sine.easeOut' });
+      this.tweens.add({ targets: b, scale: BS * (1 + 0.14 * strength), duration: 120, delay: c * 24 + r * 5, yoyo: true, ease: 'Sine.easeOut' });
     });
   }
 
@@ -2967,10 +3173,8 @@ class GameScene extends Phaser.Scene {
   hitStop(ms, scale = 0.12) {
     if (this.reduce || this.gameOver) return;
     this.tweens.timeScale = scale; this.time.timeScale = scale;
-    window.setTimeout(() => {
-      if (!this.sys || !this.sys.isActive()) return;
-      this.tweens.timeScale = 1; this.time.timeScale = 1;
-    }, ms);
+    // Counted down in update() with the real frame delta, so it ends on time even if the tab stalls.
+    this.stopMs = Math.max(this.stopMs || 0, ms);
   }
 
   /**
@@ -3028,99 +3232,73 @@ class GameScene extends Phaser.Scene {
             this.grid[row][col] = null;
             bubble.setData('row', emptyRow);
             bubble.setData('col', col);
+            this.headDepth(bubble);
             const pos = this.gridToWorld(emptyRow, col);
             const dropDist = emptyRow - row;
+            bubble.hd.mood = 'peek'; bubble.hd.moodEnd = this.time.now + 99999;
             this.tweens.add({
               targets: bubble, y: pos.y,
-              duration: 300 + dropDist * 45, delay: col * 18, ease: 'Back.easeOut',
-              onComplete: () => {
-                window.audioEngine.playLand(dropDist * 0.02);
-                if (!this.reduce && bubble.active) this.tweens.add({ targets: bubble, scaleX: 1.06 * BS, scaleY: 0.84 * BS, duration: 70, yoyo: true, ease: 'Quad.easeOut' });
-              },
+              duration: this.reduce ? 1 : 110 + Math.sqrt(dropDist) * 115, delay: col * 14, ease: 'Quad.easeIn',
+              onStart: () => { if (!this.reduce && bubble.active) bubble.setScale(BS * 0.93, BS * 1.09); },
+              onComplete: () => this.landHead(bubble, dropDist),
             });
           }
           emptyRow--;
         }
       }
     }
+    this.resortHeads();
   }
 
   refillGrid() {
     for (let col = 0; col < GRID_COLS; col++) {
+      let empties = 0;
+      for (let row = 0; row < GRID_ROWS; row++) if (this.grid[row][col] === null) empties++;
       for (let row = GRID_ROWS - 1; row >= 0; row--) {
         if (this.grid[row][col] === null) {
-          this.spawnBubble(row, col, true);
+          // Every new head in a column falls the same distance (past the top edge), so they land in order, bottom first.
+          this.spawnBubble(row, col, true, (empties + 0.6) * CELL, col * 14);
         }
       }
     }
   }
 
   // -----------------------------------------------------------
-  // HYPE: the cast reacts, the streak shows in the stage banner
+  // HYPE: the streak shows in the combo band, tier-ups slam across the board
   // -----------------------------------------------------------
   triggerHypeBar() {
     const level = getStreakLevel(this.streak);
     if (!level) {
-      this.streakText.setAlpha(0);
-      this.adlibText.setAlpha(0);
+      this.tierText.setText('');
       this.lastTier = 0;
       return;
     }
     const tier = STREAK_LEVELS.indexOf(level) + 1;
+    this.tierText.setText(`${level.label}!`);
+    this.tierText.setScale(0.5);
+    this.tweens.add({ targets: this.tierText, scale: 1, duration: 260, ease: 'Back.easeOut' });
 
-    this.streakText.setText(`${this.streak}× ${level.label}`);
-    this.streakText.setFontSize(Math.min(level.size - 4, 30) + 'px');
-    this.streakText.setAlpha(1);
-    this.streakText.setScale(0.5);
-    this.tweens.add({ targets: this.streakText, scale: 1, duration: 280, ease: 'Back.easeOut' });
-
-    const lines = ADLIBS[getAdlibTier(this.streak)];
-    this.adlibText.setText(lines[Phaser.Math.Between(0, lines.length - 1)]);
-    this.adlibText.setAlpha(0);
-    this.tweens.add({ targets: this.adlibText, alpha: 1, duration: 200, delay: 140 });
-
-    this.cast.onStreak(tier);
     if (tier !== this.lastTier) { this.lastTier = tier; this.showTierBanner(level.label, tier); }
     if (this.streak >= 5) this.boardWave(this.streak >= 8 ? 1.4 : 1);
-
-    this.hypeToken = (this.hypeToken || 0) + 1;
-    const token = this.hypeToken;
-    this.time.delayedCall(1700, () => {
-      if (token !== this.hypeToken || !this.streakText.active) return; // a newer match took over the banner
-      this.tweens.add({ targets: [this.adlibText, this.streakText], alpha: 0, duration: 400 });
-    });
-
-    if (this.streak >= 5) this.flashHypeBar(P.hot);
-    if (this.streak >= 8) this.spawnStreakParticles(P.hot);
+    if (this.streak >= 5) this.flashHypeBar();
+    if (this.streak >= 8) this.spawnStreakParticles();
   }
 
+  /** The board border flashes in the accent on a hot streak. */
   flashHypeBar() {
     if (this.reduce) return;
     const br = this.boardRect;
     const bf = this.add.graphics().setDepth(7);
     bf.lineStyle(7, P.hotN, 1); bf.strokeRoundedRect(br.x - 3, br.y - 3, br.w + 6, br.h + 6, 16);
     this.tweens.add({ targets: bf, alpha: 0, duration: 520, onComplete: () => bf.destroy() });
-    const flash = this.add.graphics();
-    flash.lineStyle(5, P.hotN, 1);
-    flash.strokeRoundedRect(10, STAGE_Y, VIEW.width - 20, STAGE_H, 14);
-    flash.setDepth(7);
-    this.tweens.add({ targets: flash, alpha: 0, duration: 450, onComplete: () => flash.destroy() });
   }
 
+  /** Doodle stars shoot up from the bottom of the board on a big streak. */
   spawnStreakParticles() {
     if (this.reduce) return;
     const { width } = VIEW;
-    for (let i = 0; i < 14; i++) {
-      const p = this.add.image(Phaser.Math.Between(30, width - 30), STAGE_Y + STAGE_H - 40, 'star');
-      p.setTint(i % 2 ? P.hotN : P.inkN);
-      p.setScale(Phaser.Math.FloatBetween(0.5, 1.1) * BS);
-      p.setDepth(7).setAlpha(0);
-      this.tweens.add({
-        targets: p, alpha: 1, y: p.y - Phaser.Math.Between(60, 130), x: p.x + Phaser.Math.Between(-30, 30), rotation: Phaser.Math.FloatBetween(-2, 2), scale: 0,
-        duration: Phaser.Math.Between(600, 1000), delay: i * 40,
-        ease: 'Quad.easeOut',
-        onComplete: () => p.destroy(),
-      });
+    for (let i = 0; i < 12; i++) {
+      this.fx.spawn({ frame: i % 2 ? 'star_hot' : 'star_ink', x: Phaser.Math.Between(40, width - 40), y: this.boardRect.y + this.boardRect.h - 10, vy: -(200 + Math.random() * 180), vx: Phaser.Math.Between(-40, 40), g: 260, rot: Math.random() * 60, vr: Phaser.Math.Between(-300, 300), s0: 0.34 + Math.random() * 0.3, s1: 0.1, dur: 900, depth: 7, fadeAt: 0.6 });
     }
   }
 
@@ -3138,46 +3316,36 @@ class GameScene extends Phaser.Scene {
   }
 
   // -----------------------------------------------------------
-  // MULTIPLIER BADGE: the score multiplier, bottom left
+  // MULTIPLIER STICKER: the multiplier the score really uses (streak up to 10, doubled in fever), always visible
   // -----------------------------------------------------------
   updateMultiplierBadge() {
-    const mult = Math.min(this.streak, 10);
-    if (mult < 2) {
-      if (this.multBadge.alpha > 0) {
-        this.tweens.add({ targets: this.multBadge, alpha: 0, scale: 0.6, duration: 260, ease: 'Quad.easeIn' });
-        if (this._multGlowTween) { this._multGlowTween.stop(); this._multGlowTween = null; }
-      }
-      return;
-    }
-    const radius = 24 + Math.min(mult - 2, 8) * 0.5;
+    if (!this.multBadge) return;
+    const fever = this.feverActive;
+    const mult = effectiveMultiplier(this.streak, fever);
+    const radius = 26 + Math.min(mult - 1, 10) * 0.35;
+    const hot = mult >= 5 || fever;
     this.multRing.clear();
     this.multRing.fillStyle(P.inkN, 1);
     this.multRing.fillCircle(0, 3, radius);
-    this.multRing.fillStyle(mult >= 5 ? P.hotN : P.cardN, 1);
+    this.multRing.fillStyle(hot ? P.hotN : P.cardN, 1);
     this.multRing.fillCircle(0, 0, radius);
-    this.multRing.lineStyle(3, P.inkN, 1);
+    this.multRing.lineStyle(3.5, P.inkN, 1);
     this.multRing.strokeCircle(0, 0, radius);
 
-    // Text colour that reads on whichever fill the ring has.
-    const fill = mult >= 5 ? P.hot : P.card;
-    const n = parseInt(fill.slice(1), 16);
-    const light = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255 > 0.55;
+    const onFill = contrastPick(hot ? P.hot : P.card, ['#0a0a0a', '#ffffff']);
     this.multText.setText(`×${mult}`);
-    this.multText.setColor(light ? '#0a0a0a' : '#ffffff');
-    this.multText.setFontSize(mult >= 8 ? '26px' : '22px');
-    this.multLabel.setColor(light ? '#0a0a0a' : '#ffffff');
+    this.multText.setColor(onFill);
+    this.multText.setFontSize(mult >= 10 ? '28px' : '32px');
+    this.multLabel.setColor(onFill);
 
-    if (this.multBadge.alpha < 0.5) {
-      this.multBadge.setScale(0.3).setAlpha(1);
-      this.tweens.add({ targets: this.multBadge, scale: 1, duration: 320, ease: 'Back.easeOut' });
-    } else {
-      this.tweens.add({ targets: this.multBadge, scale: 1.25, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
-    }
-    if (mult >= 8 && !this._multGlowTween && !this.reduce) {
-      this._multGlowTween = this.tweens.add({ targets: this.multBadge, scale: 1.1, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    } else if (mult < 8 && this._multGlowTween) {
-      this._multGlowTween.stop(); this._multGlowTween = null; this.multBadge.setScale(1);
-    }
+    this.multBase = fever ? 1.4 : 1;
+    if (mult !== this._lastMult) {
+      this._lastMult = mult;
+      if (!this.reduce) { this.multBadge.setScale(this.multBase * 1.4); this.tweens.add({ targets: this.multBadge, scale: this.multBase, duration: 260, ease: 'Back.easeOut' }); }
+      else this.multBadge.setScale(this.multBase);
+    } else if (!this.reduce) {
+      this.tweens.add({ targets: this.multBadge, scale: this.multBase, duration: 160, ease: 'Quad.easeOut' });
+    } else this.multBadge.setScale(this.multBase);
   }
 
   // -----------------------------------------------------------
@@ -3219,7 +3387,6 @@ class GameScene extends Phaser.Scene {
   triggerHint() {
     if (this.isPaused || this.gameOver || this.isProcessing) return;
     if (this.hintActive) { this.clearHint(); return; }
-    this.cast.onHint();
     if (this.hintsUsed >= this.maxHints) {
       // Flash the counter red to signal exhaustion
       this.hintCountText.setColor(P.hot);
@@ -3282,8 +3449,7 @@ class GameScene extends Phaser.Scene {
     forEachCell((r, c) => {
       if (this.grid[r][c]) {
         const newColor = colors[idx++];
-        this.grid[r][c].setData('colorIdx', newColor);
-        this.grid[r][c].setTexture(bubbleKey(newColor));
+        this.applyCrew(this.grid[r][c], newColor);
         this.grid[r][c].setData('powerUp', POWERUP_TYPES.NONE);
       }
     });

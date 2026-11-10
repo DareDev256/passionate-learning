@@ -378,6 +378,16 @@ class AudioEngine {
     this.bgTimeout = setTimeout(() => this.bgLoop(), nextTime);
   }
 
+  /** One step of the fever groove: kick on 1 and 3, clap on 2 and 4, a hat on every beat. Called once per beat. */
+  playBeat(step = 0) {
+    if (!this.initialized || this.muted) return;
+    const t = this.ctx.currentTime;
+    if (step % 2 === 0) this._tone(t, { type: 'sine', freq: 130, freqEnd: 42, freqTime: 0.1, vol: 0.28, dur: 0.22 });
+    else { this.playNoiseBurst(t, 0.09, 0.16); this._tone(t, { type: 'triangle', freq: 240, vol: 0.1, dur: 0.07 }); }
+    this.bgHihat(t + 0.2, 0.07);
+    if (step === 3) this._tone(t, { type: 'square', freq: 523.25, freqEnd: 1046.5, freqTime: 0.12, vol: 0.05, dur: 0.14 });
+  }
+
   bgKick(t) {
     this._tone(t, { type: 'sine', freq: 100, freqEnd: 35, freqTime: 0.12, vol: 0.2, dur: 0.2, track: true });
   }

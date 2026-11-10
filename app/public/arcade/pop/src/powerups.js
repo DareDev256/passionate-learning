@@ -149,62 +149,42 @@ class PowerUpRenderer {
    * @param {number} time — game time in ms (drives pulse animation)
    */
   static draw(graphics, type, x, y, size, time) {
-    const pulse = Math.sin(time * 0.005) * 0.15 + 0.85;
-    const halfSize = size / 2;
+    const pulse = Math.sin(time * 0.005) * 0.5 + 0.5; // 0..1
+    const bx = x - size * 0.33, by = y + size * 0.33; // the sticker sits on the head's lower-left
+    // A pulsing accent ring marks a special head from across the board.
+    graphics.lineStyle(3.5, P.hotN, 0.55 + 0.4 * pulse);
+    graphics.strokeCircle(x, y, size / 2 + 1 + pulse * 3);
+    graphics.lineStyle(2, P.inkN, 0.9);
+    graphics.strokeCircle(x, y, size / 2 + 5 + pulse * 3);
+    // The sticker: hard shadow, accent fill, ink outline.
+    graphics.fillStyle(P.inkN, 1); graphics.fillCircle(bx, by + 2, 11.5);
+    graphics.fillStyle(P.hotN, 1); graphics.fillCircle(bx, by, 11.5);
+    graphics.lineStyle(2.6, P.inkN, 1); graphics.strokeCircle(bx, by, 11.5);
+    const glyph = contrastPick(P.hot, ['#0a0a0a', '#ffffff']);
+    const gn = parseInt(glyph.slice(1), 16);
+    graphics.lineStyle(2.4, gn, 1); graphics.fillStyle(gn, 1);
 
     switch (type) {
       case POWERUP_TYPES.LINE_H:
-        // Horizontal arrow
-        graphics.lineStyle(3, 0xffffff, 0.9 * pulse);
-        graphics.lineBetween(x - halfSize + 6, y, x + halfSize - 6, y);
-        // Arrow heads
-        graphics.lineBetween(x - halfSize + 6, y, x - halfSize + 12, y - 4);
-        graphics.lineBetween(x - halfSize + 6, y, x - halfSize + 12, y + 4);
-        graphics.lineBetween(x + halfSize - 6, y, x + halfSize - 12, y - 4);
-        graphics.lineBetween(x + halfSize - 6, y, x + halfSize - 12, y + 4);
+        graphics.lineBetween(bx - 6, by, bx + 6, by);
+        graphics.fillTriangle(bx - 7.5, by, bx - 3, by - 3.4, bx - 3, by + 3.4);
+        graphics.fillTriangle(bx + 7.5, by, bx + 3, by - 3.4, bx + 3, by + 3.4);
         break;
-
       case POWERUP_TYPES.LINE_V:
-        // Vertical arrow
-        graphics.lineStyle(3, 0xffffff, 0.9 * pulse);
-        graphics.lineBetween(x, y - halfSize + 6, x, y + halfSize - 6);
-        // Arrow heads
-        graphics.lineBetween(x, y - halfSize + 6, x - 4, y - halfSize + 12);
-        graphics.lineBetween(x, y - halfSize + 6, x + 4, y - halfSize + 12);
-        graphics.lineBetween(x, y + halfSize - 6, x - 4, y + halfSize - 12);
-        graphics.lineBetween(x, y + halfSize - 6, x + 4, y + halfSize - 12);
+        graphics.lineBetween(bx, by - 6, bx, by + 6);
+        graphics.fillTriangle(bx, by - 7.5, bx - 3.4, by - 3, bx + 3.4, by - 3);
+        graphics.fillTriangle(bx, by + 7.5, bx - 3.4, by + 3, bx + 3.4, by + 3);
         break;
-
       case POWERUP_TYPES.BOMB:
-        // Concentric rings
-        graphics.lineStyle(2, 0xffffff, 0.7 * pulse);
-        graphics.strokeCircle(x, y, 8 * pulse);
-        graphics.lineStyle(1.5, 0xffffff, 0.4 * pulse);
-        graphics.strokeCircle(x, y, 14 * pulse);
-        // Cross
-        graphics.lineStyle(2, P.hotN, 0.8);
-        graphics.lineBetween(x - 5, y - 5, x + 5, y + 5);
-        graphics.lineBetween(x + 5, y - 5, x - 5, y + 5);
+        graphics.strokeCircle(bx, by, 3.6 + pulse * 1.6);
+        graphics.lineBetween(bx - 6.5, by, bx - 4.4, by); graphics.lineBetween(bx + 4.4, by, bx + 6.5, by);
+        graphics.lineBetween(bx, by - 6.5, bx, by - 4.4); graphics.lineBetween(bx, by + 4.4, bx, by + 6.5);
         break;
-
       case POWERUP_TYPES.NUKE:
-        // Star burst
-        graphics.lineStyle(2, P.hotN, 0.9 * pulse);
         for (let i = 0; i < 6; i++) {
-          const angle = (i / 6) * Math.PI * 2 + time * 0.002;
-          const len = 10 * pulse;
-          graphics.lineBetween(
-            x + Math.cos(angle) * 4,
-            y + Math.sin(angle) * 4,
-            x + Math.cos(angle) * len,
-            y + Math.sin(angle) * len
-          );
+          const angle = (i / 6) * Math.PI * 2 + time * 0.003;
+          graphics.lineBetween(bx + Math.cos(angle) * 2, by + Math.sin(angle) * 2, bx + Math.cos(angle) * (6 + pulse * 1.2), by + Math.sin(angle) * (6 + pulse * 1.2));
         }
-        // Center diamond
-        graphics.fillStyle(P.hotN, 0.8 * pulse);
-        const d = 4;
-        graphics.fillTriangle(x, y - d, x + d, y, x, y + d);
-        graphics.fillTriangle(x, y - d, x - d, y, x, y + d);
         break;
     }
   }
