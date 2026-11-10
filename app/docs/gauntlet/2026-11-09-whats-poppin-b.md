@@ -37,3 +37,27 @@ Per-frame cost of the game step (update plus render submit) in headless Chromium
 ## Honest caveat
 
 Critics scored stills, strips and a spliced recording, not hands on glass. The recorded frame cadence is the stepped 30 fps, so squash, bounce and hit-stop frames can fall between samples (a critic reported "no visible settle bounce" from sampled frames). The score is a floor on what a player would feel, not a measurement of it.
+
+## Round 4 (2026-11-10 11:12 ET, fresh critic after the spawn cap was reset)
+
+Scored on the committed stills and strips only; the critic did not extract frames from the 30 fps video, so motion was inferred from strips.
+
+| Criterion | Score |
+|---|---|
+| Character life and celebrations (Duolingo) | 4.5 |
+| Tactile pop, swap, settle (Threes!) | 5 |
+| Payoff moments (Peggle) | 5.5 |
+| Polish at 390 px | 4.5 |
+| Stick characters in the game, not beside it | 3.5 |
+| **Overall** | **4.5** |
+
+Lower than round 3 (6) from a different critic on the same build: critic variance is about 1.5 points, so the honest read is 4.5 to 6.
+
+Top issues, most costly first:
+1. Heads only: on Notebook, Blackout and Ultraviolet the board shows faces with props, no body, limbs or pose, so the crew reads as emoji rather than stick characters (notebook-02, notebook-07, inapp-blackout-02, blackout-09).
+2. The crew never celebrates during play: chain and fever cover the board with a starburst and words instead of the characters reacting (strip-fever, strip-chain).
+3. Overlay collisions: UNSTOPPABLE on the STREAK label, FEVER banner over 30% of the board, debris over SCORE and SECONDS, GO! over tiles, dead gap under BACK TO LEARNING (notebook-11, blackout-09, greenroom-14, inapp-blackout-02).
+4. Pops are one flat sticker for every head; swap and about-to-pop look like idle; columns collapse with no cushioned settle (notebook-04, notebook-07, strip-pop-frames).
+5. Score stays 0 through fever then jumps; low-contrast NEW HIGH SCORE on Bubblegum; tiny secondary labels; FIRST POP button stays all game.
+
+Most leverage toward 8: full stick bodies on the board in every theme that act (jump, flinch, cheer, dance) with each pop, chain and fever, plus a reserved banner lane so the board stays clear.
